@@ -62,7 +62,7 @@ end
 
 cal_code_rom u_cal_code_rom (
     .a      (r_code_addr    ),      // input wire [4 : 0] a
-    .spo    (w_code         )       // output wire [79 : 0] spo
+    .spo    (w_code         )       // output wire [96 : 0] spo
 );
 
 endmodule // code_fetch
