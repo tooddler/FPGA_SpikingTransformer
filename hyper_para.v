@@ -54,4 +54,8 @@
 `define     ERS_MAX_WIDTH               21               // 8 bit + log2(9) + log2(384) --> 21 bit
 
 // MaxPool2d
-`define     MAXPOOL2D_NUM               16
+`define     MAXPOOL2D_NUM               16               // nums for cal unit
+
+/* -------------- systolic array --------------*/
+`define     SYSTOLIC_UNIT_NUM           8
+`define     SYSTOLIC_DATA_WIDTH         16
