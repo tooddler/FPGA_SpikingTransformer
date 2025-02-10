@@ -11,14 +11,22 @@ module SystolicArray_v1 (
     input                                             s_clk               ,
     input                                             s_rst               ,    
     // -- get A Matrix Data Slices
-    input                                             spikes_valid        ,
-    input       [`IMG_WIDTH*`TIME_STEPS - 1 : 0]      spikes              ,
-    input                                             spikes_done         ,
-    output reg                                        spikes_ready=0      ,
+    input                                             MtrxA_slice_valid   ,
+    input       [`SYSTOLIC_DATA_WIDTH - 1 : 0]        MtrxA_slice_data    ,
+    input                                             MtrxA_slice_done    ,
+    output reg                                        MtrxA_slice_ready=0 ,
     // -- get B Matrix Data Slices
-
+    input                                             MtrxB_slice_valid   ,
+    input       [`SYSTOLIC_DATA_WIDTH - 1 : 0]        MtrxB_slice_data    ,
+    input                                             MtrxB_slice_done    ,
+    output reg                                        MtrxB_slice_ready=0 ,
     // -- get C Matrix Data Slices
-
+    input                                             MtrxC_slice_valid   ,
+    input       [`SYSTOLIC_DATA_WIDTH - 1 : 0]        MtrxC_slice_data    ,
+    input                                             MtrxC_slice_done    ,
+    output reg                                        MtrxC_slice_ready=0 
 ); 
+
+
 
 endmodule //SystolicArray_v1
