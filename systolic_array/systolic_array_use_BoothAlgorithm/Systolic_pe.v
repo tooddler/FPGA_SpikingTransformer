@@ -4,11 +4,10 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     FUNC    : Din * Weight + Psum
-    ** Attn ** : simulation only
 */
 
 `include "../../hyper_para.v"
-module Systolic_pe_v1 (
+module Systolic_pe (
     input                                                    s_clk               ,
     input                                                    s_rst               ,    
     // B Matrix Data Slices as Weights
@@ -60,17 +59,9 @@ always@(posedge s_clk, posedge s_rst) begin
         out_psum_data <= $signed(in_psum_data) + $signed(w_rlst); 
 end
 
-mutil_unit_sim u_mutil_unit_sim(
-    .s_clk          ( s_clk         ),
-    .s_rst          ( s_rst         ),
-
-    .valid          ( in_data_valid ),
-    .a              ( in_raw_data   ),
-    .b              ( r_weight      ),
-
-    .rlst           ( w_rlst        ),
-    .rlst_vld       ( w_rlst_vld    )
-);
+// ---- booth multiply unit ---- \\
 
 
-endmodule //Systolic_pe_v1
+
+
+endmodule //Systolic_pe

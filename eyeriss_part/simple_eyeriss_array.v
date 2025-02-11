@@ -3,7 +3,7 @@
     Author  : Toddler. 
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
-    todo    : 增加 BRAM 带宽，保证计算效率 (use NoC?)
+    todo    : 增加 BRAM 带宽，保证计算效率 (use NoC? 异步处理？)  
 */
 
 `include "../hyper_para.v"
