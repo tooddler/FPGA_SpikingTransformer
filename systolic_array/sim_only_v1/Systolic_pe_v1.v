@@ -30,18 +30,18 @@ wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                          w_rlst             
 wire                                                         w_rlst_vld          ;
 
 reg [`SYSTOLIC_DATA_WIDTH - 1 : 0]                           r_weight            ;
-reg                                                          r_weight_valid      ;   
+// reg                                                          r_weight_valid      ;   
 
-always@(posedge s_clk) begin
-    r_weight_valid <= weight_valid ;
-end
+// always@(posedge s_clk) begin
+//     r_weight_valid <= weight_valid ;
+// end
 
 // r_weight
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst) begin
         r_weight <= 'd0;
     end
-    else if (weight_valid && ~r_weight_valid) begin
+    else if (weight_valid) begin
         r_weight <= weights;
     end
 end
