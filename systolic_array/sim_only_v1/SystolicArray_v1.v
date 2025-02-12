@@ -33,12 +33,12 @@ localparam  S_IDLE         =   0   ,
             S_CAL_MM       =   3   ;
 
 // --- wire ---
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_rawdata_valid     ;     
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_o_rawdata_valid   ;    
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_full                ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_empty               ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full           ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty          ;
+wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_rawdata_valid         ;     
+wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_o_rawdata_valid       ;    
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_full                    ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_empty                   ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full               ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty              ;
 
 wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_rawdata         [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;     
 wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_o_rawdata       [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
@@ -54,14 +54,14 @@ wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_in_psum_data         
 wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_out_psum_data          [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
 
 // --- reg ---
-reg  [2:0]                                               s_curr_state               ;
-reg  [2:0]                                               s_next_state               ;
+reg  [2:0]                                               s_curr_state                   ;
+reg  [2:0]                                               s_next_state                   ;
 
-reg  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]   Systolic_weight_valid='d0  ;     
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        Systolic_fifoin_valid='d0  ;
-reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                r_fifoin_cnt               ;
-reg  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                      Systolic_fifoindata        ;  
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_fifo_out_valid  ;
+reg  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]   Systolic_weight_valid='d0      ;     
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        Systolic_fifoin_valid='d0      ;
+reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                r_fifoin_cnt                   ;
+reg  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                      Systolic_fifoindata='d0        ;  
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_fifo_out_valid='d0  ;
 
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
@@ -139,7 +139,7 @@ generate
 endgenerate
 
 // --------------- CAL MM --------------- \\ 
-// r_Systolic_fifo_out_valid **Attn** : delay !
+// r_Systolic_fifo_out_valid
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_Systolic_fifo_out_valid[0] = 1'b0;
@@ -215,13 +215,13 @@ generate
 
             if (col == 0) begin
 
-                assign w_in_psum_data[row] = 'd0 ; // 0, 1, 2 
+                assign w_in_psum_data[row] = 'd0 ;
             
             end else begin
 
                 assign w_in_psum_data[col*`SYSTOLIC_UNIT_NUM + row] = w_out_psum_data[(col - 1)*`SYSTOLIC_UNIT_NUM + row] ;
 
-            end 
+            end
 
         end
     end
