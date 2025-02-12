@@ -37,8 +37,8 @@ wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_rawdata_valid 
 wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_o_rawdata_valid   ;    
 wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_full                ;
 wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_empty               ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psumfifo_full            ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psumfifo_empty           ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full           ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty          ;
 
 wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_rawdata         [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;     
 wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_o_rawdata       [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
@@ -139,32 +139,43 @@ generate
 endgenerate
 
 // --------------- CAL MM --------------- \\ 
+// r_Systolic_fifo_out_valid **Attn** : delay !
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_Systolic_fifo_out_valid[0] = 1'b0;
+    else if (r_Systolic_fifo_out_valid[`SYSTOLIC_UNIT_NUM - 1])
+        r_Systolic_fifo_out_valid[0] = 1'b0;
+    else if (s_curr_state == S_CAL_MM)
+        r_Systolic_fifo_out_valid[0] = 1'b1;
+end
 
 genvar mm;
 generate
+
     for (mm = 0; mm < `SYSTOLIC_UNIT_NUM; mm = mm + 1) begin: psum_fifo
-        
-        // r_Systolic_fifo_out_valid **Attn** : delay !
-        always@(posedge s_clk, posedge s_rst) begin
-            if (s_rst)
-               r_Systolic_fifo_out_valid[mm] = 1'b0;
-            else if ()
+
+        if (mm > 0) begin
+
+            always@(posedge s_clk) begin
+                r_Systolic_fifo_out_valid[mm] <= r_Systolic_fifo_out_valid[mm - 1];
+            end
 
         end
 
-        Psum_slice_fifo u_Psum_slice_fifo (
-            .clk        ( s_clk                                ),
-            .srst       ( s_rst                                ),
-            .din        ( Systolic_fifoindata                  ), 
-            .wr_en      ( Systolic_fifoin_valid[mm]            ),
+        // Psum_slice_fifo u_Psum_slice_fifo (
+        //     .clk        ( s_clk                                ),
+        //     .srst       ( s_rst                                ),
+        //     .din        ( psum_fifoindata                      ), 
+        //     .wr_en      ( psum_fifoin_valid[mm]                ),
             
-            .rd_en      ( r_Systolic_fifo_out_valid[mm]        ),
-            .dout       ( w_Systolic_fifo_out[mm]              ),
-            .full       ( w_psumfifo_full[mm]                  ),
-            .empty      ( w_psumfifo_empty[mm]                 )
-        );
+        //     .rd_en      ( r_psum_fifo_out_valid[mm]            ),
+        //     .dout       ( w_psum_fifo_out[mm]                  ),
+        //     .full       ( w_psum_fifo_full[mm]                  ),
+        //     .empty      ( w_psum_fifo_empty[mm]                 )
+        // );
 
     end
+
 endgenerate
 
 // --------------- Systolic Array Main Code --------------- \\ 
