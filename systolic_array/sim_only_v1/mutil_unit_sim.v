@@ -12,9 +12,9 @@ module mutil_unit_sim (
     output reg                                               rlst_vld  
 );
 
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]         w_multi_data ;
+wire signed [`SYSTOLIC_PSUM_WIDTH - 1 : 0]         w_multi_data ;
 
-assign w_multi_data = a * b;
+assign w_multi_data = $signed(a) * $signed(b);
 
 reg                 r_vld_delay_r0  ;
 reg                 r_vld_delay_r1  ;

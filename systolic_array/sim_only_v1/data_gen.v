@@ -23,8 +23,8 @@ module data_gen (
 );
 
 reg [`DATA_WIDTH/8 - 1 : 0]                           mem [`MEM_LENGTH - 1 : 0]   ;
-reg [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]              r_MtrxA_cnt                 ;
-reg [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]              r_MtrxB_cnt                 ;
+reg [9:0]                                             r_MtrxA_cnt                 ;
+reg [9:0]                                             r_MtrxB_cnt                 ;
 
 reg [`ADDR_SIZE - 1 : 0]                              r_MtrxA_addr                ;
 reg [`ADDR_SIZE - 1 : 0]                              r_MtrxB_addr                ;
@@ -48,7 +48,7 @@ initial begin
         addr = addr + 1;
     end
     addr = addr - 1;
-    $display("read MtrxA num: %d", addr<<3);
+    $display("read MtrxA num: %d", addr);
     $fclose(file);
 
     // load MtrxB
@@ -61,7 +61,7 @@ initial begin
         addr = addr + 1;
     end
     addr = addr - 1;
-    $display("read MtrxB num: %d", addr<<3);
+    $display("read MtrxB num: %d", addr);
     $fclose(file);
 
 end

@@ -32,18 +32,12 @@ localparam  S_IDLE         =   0   ,
             S_CAL_MM       =   2   ,
             S_DATA_WAIT    =   3   ;
 
-// --- wire ---
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_rawdata_valid         ;     
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_o_rawdata_valid       ;    
+// --- wire ---  
 wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_full                    ;
 wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_fifo_empty                   ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full               ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty              ;
+// wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full               ;
+// wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty              ;
 
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_rawdata         [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;     
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     Systolic_o_rawdata       [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     Systolic_psum_in         [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     Systolic_psum_out        [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;
 wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w_Systolic_fifo_out      [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
 
 wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  w_in_data_valid                                                            ;
@@ -66,6 +60,9 @@ reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                r_fifoin_cnt           
 reg  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                      Systolic_fifoindata='d0        ;  
 reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_fifo_out_valid='d0  ;
 
+reg                                                      r_loadMtrxA_flag               ;
+reg                                                      r_loadMtrxB_flag               ;
+
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
@@ -85,12 +82,20 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // --------------- MTRXB proc --------------- \\ 
+// r_loadMtrxB_flag
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || s_curr_state == S_IDLE)
+        r_loadMtrxB_flag <= 1'b0;
+    else if (MtrxB_slice_done)
+        r_loadMtrxB_flag <= 1'b1;
+end
+
 // MtrxB_slice_ready
 always@(posedge s_clk) begin
-    if (s_curr_state == S_LOAD_MTRX)
-        MtrxB_slice_ready <= 1'b1;
-    else if (MtrxB_slice_ready && MtrxB_slice_valid && MtrxB_slice_done)
+    if (MtrxB_slice_ready && MtrxB_slice_valid && MtrxB_slice_done)
         MtrxB_slice_ready <= 1'b0;
+    else if (s_curr_state == S_LOAD_MTRX && ~r_loadMtrxB_flag)
+        MtrxB_slice_ready <= 1'b1;
     else 
         MtrxB_slice_ready <= 1'b0;
 end
@@ -101,19 +106,25 @@ always@(posedge s_clk) begin
         Systolic_weight_valid <= {{(`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1){1'b0}}, 1'b1};
     else if (MtrxB_slice_ready && MtrxB_slice_valid)
         Systolic_weight_valid <= Systolic_weight_valid << 1;
-    else 
-        Systolic_weight_valid <= 'd0;
 end
 
 // --------------- MTRXA proc --------------- \\ 
+// r_loadMtrxA_flag
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || s_curr_state == S_IDLE)
+        r_loadMtrxA_flag <= 1'b0;
+    else if (MtrxA_slice_done)
+        r_loadMtrxA_flag <= 1'b1;
+end
+
 // MtrxA_slice_ready Systolic_fifoindata
 always@(posedge s_clk) begin
     Systolic_fifoindata <= MtrxA_slice_data;
 
-    if (s_curr_state == S_LOAD_MTRX)
-        MtrxA_slice_ready <= 1'b1;
-    else if (MtrxA_slice_ready && MtrxA_slice_valid && MtrxA_slice_done)
+    if (MtrxA_slice_ready && MtrxA_slice_valid && MtrxA_slice_done)
         MtrxA_slice_ready <= 1'b0;
+    else if (s_curr_state == S_LOAD_MTRX && ~r_loadMtrxA_flag)
+        MtrxA_slice_ready <= 1'b1;
     else 
         MtrxA_slice_ready <= 1'b0;
 end

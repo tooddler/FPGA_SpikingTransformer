@@ -15,6 +15,12 @@ wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]        MtrxB_slice_data  ;
 wire                                        MtrxB_slice_done  ;
 wire                                        MtrxB_slice_ready ;
 
+wire [9 : 0]                                w_MtrxA_cnt       ;
+wire [9 : 0]                                w_MtrxB_cnt       ;
+
+wire [`ADDR_SIZE - 1 : 0]                   w_MtrxA_addr      ;
+wire [`ADDR_SIZE - 1 : 0]                   w_MtrxB_addr      ;
+
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
 
@@ -26,6 +32,12 @@ initial begin
     # 4000;
 //    $stop;
 end
+
+assign w_MtrxA_cnt  = u_data_gen.r_MtrxA_cnt ;
+assign w_MtrxB_cnt  = u_data_gen.r_MtrxB_cnt ;
+
+assign w_MtrxA_addr = u_data_gen.r_MtrxA_addr;
+assign w_MtrxB_addr = u_data_gen.r_MtrxB_addr;
 
 data_gen u_data_gen(
     .s_clk              ( s_clk              ),
@@ -59,7 +71,7 @@ SystolicArray_v1 u_SystolicArray_v1(
     .MtrxC_slice_valid  ( ),
     .MtrxC_slice_data   ( ),
     .MtrxC_slice_done   ( ),
-    .MtrxC_slice_ready  ('d0)
+    .MtrxC_slice_ready  ( )
 );
 
 endmodule //mm_cal_tb
