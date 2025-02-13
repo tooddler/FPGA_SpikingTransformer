@@ -58,6 +58,6 @@
 
 /* -------------- systolic array --------------*/
 `define     SYSTOLIC_UNIT_NUM           8
-`define     SYSTOLIC_DATA_WIDTH         16
+`define     SYSTOLIC_DATA_WIDTH         8
 // e.g. A(M x K) B(K x N)  to avaid overflow : psum_width = 2 * SYSTOLIC_DATA_WIDTH + log2(K)
-`define     SYSTOLIC_PSUM_WIDTH         64               
+`define     SYSTOLIC_PSUM_WIDTH         32               

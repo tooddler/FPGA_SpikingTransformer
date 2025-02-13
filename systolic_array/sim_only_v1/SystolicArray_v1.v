@@ -28,9 +28,9 @@ module SystolicArray_v1 (
 );
 
 localparam  S_IDLE         =   0   ,
-            S_LOAD_MTRXB   =   1   ,
-            S_LOAD_MTRXA   =   2   ,
-            S_CAL_MM       =   3   ;
+            S_LOAD_MTRX    =   1   ,
+            S_CAL_MM       =   2   ,
+            S_DATA_WAIT    =   3   ;
 
 // --- wire ---
 wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  Systolic_rawdata_valid         ;     
@@ -53,10 +53,13 @@ wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w_out_raw_data         
 wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_in_psum_data           [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
 wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_out_psum_data          [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
 
+wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_Cal_MM_rlst            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+
 // --- reg ---
 reg  [2:0]                                               s_curr_state                   ;
 reg  [2:0]                                               s_next_state                   ;
 
+reg  [1:0]                                               r_loadMtrx_cnt                 ;  
 reg  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]   Systolic_weight_valid='d0      ;     
 reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        Systolic_fifoin_valid='d0      ;
 reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                r_fifoin_cnt                   ;
@@ -71,11 +74,23 @@ always@(posedge s_clk, posedge s_rst) begin
         s_curr_state <= s_next_state;
 end
 
+// r_loadMtrx_cnt
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || s_curr_state == S_IDLE)
+        r_loadMtrx_cnt <= 'd0;
+    else if (MtrxA_slice_done && MtrxB_slice_done)
+        r_loadMtrx_cnt <= r_loadMtrx_cnt + 'd2;
+    else if (MtrxA_slice_done || MtrxB_slice_done)
+        r_loadMtrx_cnt <= r_loadMtrx_cnt + 1'b1;
+end
+
 // --------------- MTRXB proc --------------- \\ 
 // MtrxB_slice_ready
 always@(posedge s_clk) begin
-    if (s_curr_state == S_LOAD_MTRXB)
+    if (s_curr_state == S_LOAD_MTRX)
         MtrxB_slice_ready <= 1'b1;
+    else if (MtrxB_slice_ready && MtrxB_slice_valid && MtrxB_slice_done)
+        MtrxB_slice_ready <= 1'b0;
     else 
         MtrxB_slice_ready <= 1'b0;
 end
@@ -95,8 +110,10 @@ end
 always@(posedge s_clk) begin
     Systolic_fifoindata <= MtrxA_slice_data;
 
-    if (s_curr_state == S_LOAD_MTRXA)
+    if (s_curr_state == S_LOAD_MTRX)
         MtrxA_slice_ready <= 1'b1;
+    else if (MtrxA_slice_ready && MtrxA_slice_valid && MtrxA_slice_done)
+        MtrxA_slice_ready <= 1'b0;
     else 
         MtrxA_slice_ready <= 1'b0;
 end
@@ -224,6 +241,9 @@ generate
             end
 
         end
+
+        assign w_Cal_MM_rlst[col] = w_out_psum_data[(`SYSTOLIC_UNIT_NUM - 1) * `SYSTOLIC_UNIT_NUM + col] ;
+
     end
 
 endgenerate
@@ -233,10 +253,10 @@ endgenerate
 always@(*) begin
 
     case(s_curr_state)
-        S_IDLE:             s_next_state = S_LOAD_MTRXB;
-        S_LOAD_MTRXB:       s_next_state = MtrxB_slice_done ? S_LOAD_MTRXA : S_LOAD_MTRXB;
-        S_LOAD_MTRXA:       s_next_state = MtrxA_slice_done ? S_CAL_MM : S_LOAD_MTRXA;
-        S_CAL_MM:           s_next_state = ;
+        S_IDLE:             s_next_state = S_LOAD_MTRX;
+        S_LOAD_MTRX:        s_next_state = (r_loadMtrx_cnt == 'd2) ? S_CAL_MM : S_LOAD_MTRX;
+        S_CAL_MM:           s_next_state = r_Systolic_fifo_out_valid[`SYSTOLIC_UNIT_NUM - 1] ? S_DATA_WAIT : S_CAL_MM;
+        S_DATA_WAIT:        s_next_state = S_DATA_WAIT;
         default:            s_next_state = S_IDLE;
     endcase 
 
