@@ -62,6 +62,5 @@ SystolicArray_v1 u_SystolicArray_v1(
     .MtrxC_slice_ready  ('d0)
 );
 
-
 endmodule //mm_cal_tb
 
