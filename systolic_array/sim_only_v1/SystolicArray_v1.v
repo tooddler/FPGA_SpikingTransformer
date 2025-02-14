@@ -170,11 +170,11 @@ endgenerate
 // r_Systolic_fifo_out_valid
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
-        r_Systolic_fifo_out_valid[0] = 1'b0;
+        r_Systolic_fifo_out_valid[0] <= 1'b0;
     else if (r_Systolic_fifo_out_valid[`SYSTOLIC_UNIT_NUM - 1])
-        r_Systolic_fifo_out_valid[0] = 1'b0;
+        r_Systolic_fifo_out_valid[0] <= 1'b0;
     else if (s_curr_state == S_CAL_MM)
-        r_Systolic_fifo_out_valid[0] = 1'b1;
+        r_Systolic_fifo_out_valid[0] <= 1'b1;
 end
 
 genvar mm;

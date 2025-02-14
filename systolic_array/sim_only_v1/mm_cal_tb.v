@@ -15,8 +15,8 @@ wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]        MtrxB_slice_data  ;
 wire                                        MtrxB_slice_done  ;
 wire                                        MtrxB_slice_ready ;
 
-wire [9 : 0]                                w_MtrxA_cnt       ;
-wire [9 : 0]                                w_MtrxB_cnt       ;
+wire [15 : 0]                               w_MtrxA_cnt       ;
+wire [15 : 0]                               w_MtrxB_cnt       ;
 
 wire [`ADDR_SIZE - 1 : 0]                   w_MtrxA_addr      ;
 wire [`ADDR_SIZE - 1 : 0]                   w_MtrxB_addr      ;

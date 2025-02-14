@@ -23,8 +23,8 @@ module data_gen (
 );
 
 reg [`DATA_WIDTH/8 - 1 : 0]                           mem [`MEM_LENGTH - 1 : 0]   ;
-reg [9:0]                                             r_MtrxA_cnt                 ;
-reg [9:0]                                             r_MtrxB_cnt                 ;
+reg [15:0]                                            r_MtrxA_cnt                 ;
+reg [15:0]                                            r_MtrxB_cnt                 ;
 
 reg [`ADDR_SIZE - 1 : 0]                              r_MtrxA_addr                ;
 reg [`ADDR_SIZE - 1 : 0]                              r_MtrxB_addr                ;
@@ -54,7 +54,7 @@ initial begin
     // load MtrxB
     file = $fopen(MtrxB_data_path, "rb");
     addr = 0;
-    first_addr = `IMG_BASEADDR / 8;
+    first_addr = `IMG_BASEADDR;
     while (!$feof(file)) begin
         o = $fread(byte_data, file);
         mem[first_addr + addr] = {byte_data[0]};
@@ -94,7 +94,7 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // MtrxA_slice_data 
-assign MtrxA_slice_data = mem[r_MtrxA_addr];
+assign MtrxA_slice_data = mem[r_MtrxA_cnt];
 
 // MtrxA_slice_done
 always@(posedge s_clk) begin
@@ -126,13 +126,13 @@ end
 // r_MtrxB_addr
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
-        r_MtrxB_addr <= 'd0;
+        r_MtrxB_addr <= `IMG_BASEADDR;
     else if (r_MtrxB_cnt[0])
         r_MtrxB_addr <= r_MtrxB_addr + 1'b1;
 end
 
 // MtrxB_slice_data 
-assign MtrxB_slice_data = mem[r_MtrxB_addr];
+assign MtrxB_slice_data = mem[r_MtrxB_cnt + `IMG_BASEADDR];
 
 // MtrxB_slice_done 
 always@(posedge s_clk) begin
