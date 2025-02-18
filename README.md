@@ -3,6 +3,8 @@
 # 找完工作再写
 
 1. 完成 Spiking Transformer 算法训练，吸收 BN 层，进行低比特感知量化；
+    - 参考大佬算法开源： https://github.com/ZK-Zhou/spikformer
+    - 论文：Spikformer: When Spiking Neural Network Meets Transformer
 
 2. 结合 NeuFlow 的通用卷积加速架构，实现图像数据到脉冲数据的转换，实现 Spiking Encoder 部分；
 
