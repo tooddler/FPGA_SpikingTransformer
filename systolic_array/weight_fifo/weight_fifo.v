@@ -31,9 +31,9 @@ wire                                w_almost_empty         ;
 
 reg     [`ADDR_SIZE - 1 : 0]        r_mtrx_baseaddr00      ;
 reg     [`ADDR_SIZE - 1 : 0]        r_mtrx_baseaddr01      ;
-reg     [5 : 0]                     r_base00_cnt           ;
-reg     [5 : 0]                     r_base01_cnt           ;
-reg     [5 : 0]                     r_base02_cnt           ;
+reg     [5:0]                       r_base00_cnt           ;
+reg     [5:0]                       r_base01_cnt           ;
+reg     [5:0]                       r_base02_cnt           ;
 reg                                 r_fifo_rst_flag        ;
 
 assign rd_burst_len         =       `SYSTOLIC_UNIT_NUM / 8 ;

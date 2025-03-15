@@ -57,12 +57,14 @@
 `define     MAXPOOL2D_NUM               16               // nums for cal unit
 
 /* -------------- systolic array --------------*/
+`define     PATCH_EMBED_WIDTH           32               // IMG_WIDTH / 4,  TIME_STEPS == 4
 `define     SYSTOLIC_UNIT_NUM           64
 // `define     SYSTOLIC_LOADWIDTH          128
-`define     SYSTOLIC_DATA_WIDTH         8
-// e.g. A(M x K) B(K x N)  to avaid overflow : psum_width = 2 * SYSTOLIC_DATA_WIDTH + log2(K)
-`define     SYSTOLIC_PSUM_WIDTH         32      
-`define     PATCH_EMBED_WIDTH           32               // IMG_WIDTH / 4,  TIME_STEPS == 4
+`define     SYSTOLIC_DATA_WIDTH         8                // 2 bit * TIME_STEPS = 8 bit
+`define     SYSTOLIC_WEIGHT_WIDTH       8
+// e.g. A(M x K) B(K x N)  to avaid overflow : 
+// psum_width = SYSTOLIC_DATA_WIDTH / TIME_STEPS * 8bit(weight) + log2(K)
+`define     SYSTOLIC_PSUM_WIDTH         80               // 20 bit * TIME_STEPS = 64 bit    
 // qkv_linearWeights
 `define     WEIGHTS_QKV_BASEADDR        32'h2000_0000
 `define     FINAL_FMAPS_CHNNLS          384
