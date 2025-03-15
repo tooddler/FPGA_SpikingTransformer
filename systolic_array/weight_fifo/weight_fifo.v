@@ -3,6 +3,7 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : read Weights from DDR
+              Order -> Q, K, V, MLP Weights
     ps      : fifo depth --> 512
 */
 

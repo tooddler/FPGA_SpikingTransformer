@@ -68,7 +68,8 @@ reg  [`SYSTOLIC_WEIGHT_WIDTH - 1 : 0]                    r_Systolic_Weights_Tmp=
 reg  [`SYSTOLIC_WEIGHT_WIDTH - 1 : 0]                    r_Systolic_Weights       [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ; 
 
 // -- MtrxA register signal --
-
+reg  [1:0]                                               r_LoadMtrxA_Pointer            ;
+reg  [1:0]                                               r_CalcMtrxA_Pointer            ;
 
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
