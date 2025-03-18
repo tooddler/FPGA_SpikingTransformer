@@ -18,16 +18,16 @@
 
 ## SpikingEncoder
 
-![SpikingEncoder00](./Toddler_proj_fig/SpikingEncoder.png)
+![SpikingEncoder00](/Toddler_proj_fig/SpikingEncoder.png)
 
-![SpikingEncoder01](./Toddler_proj_fig/SpikingEncoder_1.png)
+![SpikingEncoder01](/Toddler_proj_fig/SpikingEncoder_1.png)
 
 ## Simple Eyeriss
 
-![Eyeriss00](./Toddler_proj_fig/Eyeriss_part.png)
+![Eyeriss00](/Toddler_proj_fig/Eyeriss_part.png)
 
 ## Spiking Attention
 
-![Attention00](./Toddler_proj_fig/Attention.png)
+![Attention00](/Toddler_proj_fig/Attention.png)
 
 
