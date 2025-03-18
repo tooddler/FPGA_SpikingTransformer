@@ -8,9 +8,9 @@
 
 2. 结合 NeuFlow 的通用卷积加速架构，实现图像数据到脉冲数据的转换，实现 Spiking Encoder 部分；
 
-3. 对于脉冲卷积部分，参考Eyeriss通用卷积加速器，完成 Spiking Patch Splitting Module 部分加速，计算方式由自定义的指令集去调度，便于后续修改算法的backbone后，依然适用；
+3. 对于脉冲卷积部分，参考 Eyeriss 通用卷积加速器，完成 Spiking Patch Splitting Module 部分加速，计算方式由自定义的指令集去调度，便于后续修改算法的 backbone 后，依然适用；
 
-4. 参考Google的TPU设计，采用脉动矩阵完成脉冲线性层和 K,Q,V 矩阵点积计算；
+4. 参考Google的TPU设计，采用脉动矩阵完成脉冲线性层和 MLP 计算；
 
 2025.2.18 做完卷积部分仿真
 
