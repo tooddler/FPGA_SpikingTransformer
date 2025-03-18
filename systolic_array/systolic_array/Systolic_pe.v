@@ -4,7 +4,7 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     FUNC    : Din[1:0] * Weight[7:0] + Psum[19:0]
-    ps      : free-DSP
+    ps      : DSP - free
 */
 
 `include "../../hyper_para.v"
@@ -24,7 +24,8 @@ module Systolic_pe (
     output reg  [`SYSTOLIC_DATA_WIDTH - 1 : 0]               out_raw_data='d0    ,
     // psum-in
     input       [`SYSTOLIC_PSUM_WIDTH - 1 : 0]               in_psum_data        ,
-    // psum-out
+    // psum-out  -- delay 2 clk -- 
+    output reg                                               out_psum_valid=0    ,
     output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]               out_psum_data       
 );
 
@@ -107,6 +108,11 @@ always@(posedge s_clk, posedge s_rst) begin
         out_psum_data <= 'd0;
     else if (out_data_valid)
         out_psum_data <= {w_psum_data_T3, w_psum_data_T2, w_psum_data_T1, w_psum_data_T0}; 
+end
+
+// out_psum_valid
+always@(posedge s_clk) begin
+    out_psum_valid <= out_data_valid;
 end
 
 // ---- as multiplier unit ---- \\

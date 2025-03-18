@@ -40,7 +40,7 @@
 `define     PE_COL                      3    
 `define     PE_NUM                      3
 
-`define     CONV1_BASEADDR              0                // 32'h0000_0000    // total: 48 x 3 x 3 x 3 = 1296 bytes  (1296 / 8 = 162)
+`define     CONV1_BASEADDR              32'h0000_0000    // 32'h0000_0000    // total: 48 x 3 x 3 x 3 = 1296 bytes  (1296 / 8 = 162)
 `define     CONV1_BURST_LENS            'd8
 `define     CONV1_KERNEL_CHNNLS         48
 `define     CONV1_WEIGHT_SCALE          5                // SCALE = Log2(32)
@@ -59,7 +59,6 @@
 /* -------------- systolic array --------------*/
 `define     PATCH_EMBED_WIDTH           32               // IMG_WIDTH / 4,  TIME_STEPS == 4
 `define     SYSTOLIC_UNIT_NUM           64
-// `define     SYSTOLIC_LOADWIDTH          128
 `define     SYSTOLIC_DATA_WIDTH         8                // 2 bit * TIME_STEPS = 8 bit
 `define     SYSTOLIC_WEIGHT_WIDTH       8
 // e.g. A(M x K) B(K x N)  to avaid overflow : 
