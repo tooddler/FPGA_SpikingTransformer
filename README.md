@@ -28,6 +28,6 @@
 
 ## Spiking Attention
 
-![Attention00](/Toddler_proj_fig/Attention.png)
+![Attention00](/Toddler_proj_fig/SpikingAttn.png)
 
 
