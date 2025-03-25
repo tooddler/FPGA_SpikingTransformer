@@ -9,13 +9,16 @@
 module PatchEmbed (
     input                                            s_clk                  ,
     input                                            s_rst                  ,
+    // Registers Reset 
+    input                                            i_Sys_Clear            ,
     // get fmaps and patch
     input                                            i_data_valid           ,
     input       [`PATCH_EMBED_WIDTH - 1 : 0]         i_fmap                 ,
     input       [`PATCH_EMBED_WIDTH - 1 : 0]         i_patchdata            ,
     // read Embedded RAM
-    input       [11 : 0]                             i_rd_addr              , // delay 2 clk
-    output reg  [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     o_ramout_data                
+    input       [11 : 0]                             i_rd_addr              ,
+    output reg  [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     o_ramout_data          , // ** Attn : delay 2 clk **      
+    output reg                                       o_ramout_ready         
 );
 
 wire   [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     w_trsfrmrdata           ;
@@ -47,10 +50,18 @@ end
 
 // r_wr_addr
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst)  // TODO:清零 
+    if (s_rst || i_Sys_Clear)
         r_wr_addr <= 'd0;
     else if (r_trsfrmrdata_valid)
         r_wr_addr <= r_wr_addr + 1'b1;
+end
+
+// o_ramout_ready
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || i_Sys_Clear)
+        o_ramout_ready <= 1'b0;
+    else if (r_trsfrmrdata_valid && ~i_data_valid)
+        o_ramout_ready <= 1'b1;
 end
 
 // --------------- instantiation --------------- \\ 
@@ -72,7 +83,7 @@ endgenerate
 EmbeddedRAM EmbeddedRAM_m0 (
     .clka       ( s_clk                 ),  // input wire clka
     .wea        ( r_trsfrmrdata_valid   ),  // input wire [0 : 0] wea
-    .addra      ( addra                 ),  // input wire [11 : 0] addra
+    .addra      ( r_wr_addr             ),  // input wire [11 : 0] addra
     .dina       ( r_trsfrmrdata         ),  // input wire [63 : 0] dina
 
     .clkb       ( s_clk                 ),  // input wire clkb

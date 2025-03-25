@@ -4,14 +4,16 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : A * B         fetch data / calculate / load data
+    
+    //TODO 优化 A 矩阵的输入 FIFO 大小、Psum FIFO 改为 LUTRAM
 */
 
 `include "../../hyper_para.v"
 module SystolicArray (
     input                                             s_clk               ,
     input                                             s_rst               ,   
-
     input                                             i_Init_PrepareData  ,
+    output wire                                       o_Finish_Calc       ,
     // -- get A Matrix Data Slices
     input                                             MtrxA_slice_valid   ,
     input       [`DATA_WIDTH - 1 : 0]                 MtrxA_slice_data    ,
@@ -19,76 +21,80 @@ module SystolicArray (
     output reg                                        MtrxA_slice_ready=0 ,
     // -- get B Matrix Data Slices
     input                                             MtrxB_slice_valid   ,
-    input       [`DATA_WIDTH - 1 : 0]                 MtrxB_slice_data    , // 64 = 8 x 8
+    input       [`DATA_WIDTH - 1 : 0]                 MtrxB_slice_data    ,
     input                                             MtrxB_slice_done    ,
-    output reg                                        MtrxB_slice_ready=0 
+    output reg                                        MtrxB_slice_ready=0 ,
+    // -- PsumFIFO Data Slices
+    input       [`SYSTOLIC_UNIT_NUM - 1 : 0]          i_PsumFIFO_Grant    ,
+    input                                             i_PsumFIFO_Valid    ,
+    output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]        o_PsumFIFO_Data  
 );
 
 // --- wire ---  
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w00_fifo_full                  ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w00_fifo_empty                 ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w01_fifo_full                  ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w01_fifo_empty                 ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_full               ;
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_psum_fifo_empty              ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w00_fifo_full                  ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w00_fifo_empty                 ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w01_fifo_full                  ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w01_fifo_empty                 ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w_psum_fifo_full               ;
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w_psum_fifo_empty              ;
 
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w00_Systolic_fifo_out    [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w01_Systolic_fifo_out    [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                             w00_Systolic_fifo_out    [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                             w01_Systolic_fifo_out    [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
 
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  w_in_data_valid                                                            ;
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w_in_raw_data            [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  w_out_data_valid                                                           ;   
-wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                     w_out_raw_data           [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_in_psum_data           [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_out_psum_data          [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
-wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]  w_out_psum_valid                                                           ;   
+wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]          w_in_data_valid                                                            ;
+wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                             w_in_raw_data            [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ; 
+wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]          w_out_data_valid                                                           ;   
+wire  [`SYSTOLIC_DATA_WIDTH - 1 : 0]                             w_out_raw_data           [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;
+wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                             w_in_psum_data           [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
+wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                             w_out_psum_data          [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0] ;  
+wire  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]          w_out_psum_valid                                                           ;   
 
-wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] w_PsumData_T0            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
-wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] w_PsumData_T1            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
-wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] w_PsumData_T2            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
-wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] w_PsumData_T3            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0]         w_PsumData_T0            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0]         w_PsumData_T1            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0]         w_PsumData_T2            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
+wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0]         w_PsumData_T3            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;
 
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_Cal_MM_rlst            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
-wire                                                     w_Cal_MM_rlst_valid      [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                             w_Cal_MM_rlst            [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+wire                                                             w_Cal_MM_rlst_valid      [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
 
-wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                     w_Psumfifo_out           [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
-wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                       w_Psumfifo_valid               ;
-wire                                                     w_MtrxB_Empty                  ;
-wire                                                     w_MtrxB_Full                   ;
+wire  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                             w_Psumfifo_out           [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+wire  [`SYSTOLIC_UNIT_NUM - 1 : 0]                               w_Psumfifo_valid               ;
+wire                                                             w_MtrxB_Empty                  ;
+wire                                                             w_MtrxB_Full                   ;
 
-wire                                                     w_MtrxA_Empty                  ;
-wire                                                     w_MtrxA_Full                   ;
+wire                                                             w_MtrxA_Empty                  ;
+wire                                                             w_MtrxA_Full                   ;
 
 // --- reg ---
-reg  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]   Systolic_weight_valid='d0      ;     
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        Systolic_fifoin_valid='d0      ;
-reg  [`DATA_WIDTH - 1 : 0]                               Systolic_fifoindata='d0        ;  
-reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                r_fifoin_cnt                   ;
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_fifo_out_valid='d0  ;
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Psumfifo_out_valid=0         ;  
-reg                                                      r_PsumAdd_Flag                 ;
+reg  [`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 : 0]           Systolic_weight_valid='d0      ;     
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                Systolic_fifoin_valid='d0      ;
+reg  [`DATA_WIDTH - 1 : 0]                                       Systolic_fifoindata='d0        ;  
+reg  [$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]                        r_fifoin_cnt                   ;
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Systolic_fifo_out_valid='d0  ;
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Psumfifo_out_valid=0         ;  
+reg                                                              r_PsumAdd_Flag                 ;
 
-reg                                                      r_MM_Calc_done                 ;
-reg                                                      r_MM_Calc_valid_delay=0        ;
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Cal_MM_rlst_valid_d0=0       ;  
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Cal_MM_rlst_valid_d1=0       ;  
-reg                                                      r_Calc_MM_Busy                 ;
-reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                      r_Cal_MM_rlst_d0         [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
-reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                      r_Cal_MM_rlst_d1         [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+reg                                                              r_MM_Calc_done                 ;
+reg                                                              r_MM_Calc_valid_delay=0        ;
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Cal_MM_rlst_valid_d0=0       ;  
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Cal_MM_rlst_valid_d1=0       ;  
+reg                                                              r_Calc_MM_Busy                 ;
+reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                              r_Cal_MM_rlst_d0         [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
+reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                              r_Cal_MM_rlst_d1         [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ;  
 
 // -- MtrxB register signal -- 
-reg  [1:0]                                               r_LoadMtrxB_Pointer=2'b00      ;
-reg  [1:0]                                               r_CalcMtrxB_Pointer=2'b00      ;
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_Col_valid='d0       ;
-reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                        r_Systolic_Row_valid='d0       ;
-reg                                                      r_MtrxB_slice_done_d0=0        ;
-reg  [`SYSTOLIC_WEIGHT_WIDTH - 1 : 0]                    r_Systolic_Weights       [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ; 
+reg  [1:0]                                                       r_LoadMtrxB_Pointer=2'b00      ;
+reg  [1:0]                                                       r_CalcMtrxB_Pointer=2'b00      ;
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Systolic_Col_valid='d0       ;
+reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Systolic_Row_valid='d0       ;
+reg                                                              r_MtrxB_slice_done_d0=0        ;
+reg  [`SYSTOLIC_WEIGHT_WIDTH - 1 : 0]                            r_Systolic_Weights       [`SYSTOLIC_UNIT_NUM - 1 : 0]                      ; 
 
 // -- MtrxA register signal --
-reg  [2:0]                                               r_MtrxAin_cnt                  ;
-reg  [1:0]                                               r_LoadMtrxA_Pointer=2'b00      ;
-reg  [1:0]                                               r_CalcMtrxA_Pointer=2'b00      ;
-reg                                                      r_MtrxA_slice_done_d0=0        ;
+reg  [$clog2((`SYSTOLIC_UNIT_NUM*8) / `DATA_WIDTH) - 1 : 0]      r_MtrxAin_cnt                  ;
+reg  [1:0]                                                       r_LoadMtrxA_Pointer=2'b00      ;
+reg  [1:0]                                                       r_CalcMtrxA_Pointer=2'b00      ;
+reg                                                              r_MtrxA_slice_done_d0=0        ;
 
 // --------------- MTRXB proc --------------- \\ 
 assign w_MtrxB_Empty  = r_LoadMtrxB_Pointer == r_CalcMtrxB_Pointer;
@@ -98,7 +104,7 @@ assign w_MtrxB_Full   = (r_LoadMtrxB_Pointer[1] ^ r_CalcMtrxB_Pointer[1]) && (r_
 always@(posedge s_clk) begin
     if (MtrxB_slice_ready && MtrxB_slice_valid && MtrxB_slice_done)
         MtrxB_slice_ready <= 1'b0;
-    else if (~w_MtrxB_Full)
+    else if (~w_MtrxB_Full && ~r_MtrxB_slice_done_d0)
         MtrxB_slice_ready <= 1'b1;
     else 
         MtrxB_slice_ready <= 1'b0;
@@ -158,7 +164,7 @@ end
 
 genvar nn;
 generate
-    for (nn = 0; nn < 8; nn = nn + 1) begin
+    for (nn = 0; nn < `SYSTOLIC_UNIT_NUM / 8; nn = nn + 1) begin
 
         // r_Systolic_Weights
         always@(posedge s_clk) begin
@@ -217,7 +223,7 @@ end
 always@(posedge s_clk) begin
     if (MtrxA_slice_ready && MtrxA_slice_valid && MtrxA_slice_done)
         MtrxA_slice_ready <= 1'b0;
-    else if (~w_MtrxA_Full)
+    else if (~w_MtrxA_Full && ~r_MtrxA_slice_done_d0)
         MtrxA_slice_ready <= 1'b1;
     else 
         MtrxA_slice_ready <= 1'b0;
@@ -235,7 +241,7 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_fifoin_cnt <= 'd0;
-    else if (MtrxA_slice_ready && MtrxA_slice_valid && r_MtrxAin_cnt == 'd7) // r_MtrxAin_cnt max = embedded ram width / 8
+    else if (MtrxA_slice_ready && MtrxA_slice_valid && r_MtrxAin_cnt == 'd1)
         r_fifoin_cnt <= r_fifoin_cnt + 1'b1;
 end
 
@@ -300,6 +306,7 @@ always@(posedge s_clk, posedge s_rst) begin
     else if (~w_MtrxA_Empty && ~w_MtrxB_Empty && ~r_Calc_MM_Busy)
         r_Systolic_fifo_out_valid[0] <= 1'b1;
 end
+
 // -----> debug dot 
 wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] debug_PsumData_T0     [`SYSTOLIC_UNIT_NUM - 1 : 0]  ;
 wire signed [`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 1 : 0] debug_PsumData_T1     [`SYSTOLIC_UNIT_NUM - 1 : 0]  ;
@@ -313,14 +320,14 @@ generate
     for (mm = 0; mm < `SYSTOLIC_UNIT_NUM; mm = mm + 1) begin: psum_fifo
 
         assign w_PsumData_T0[mm] = $signed(r_Cal_MM_rlst_d0[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0]) 
-                                +  $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0])     ;
+                                 + $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0])     ;
         assign w_PsumData_T1[mm] = $signed(r_Cal_MM_rlst_d0[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*2 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1]) 
-                                +  $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0])     ;
+                                 + $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*2 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1])     ;
         assign w_PsumData_T2[mm] = $signed(r_Cal_MM_rlst_d0[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*3 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*2]) 
-                                +  $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0])     ;
+                                 + $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*3 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*2])     ;
         assign w_PsumData_T3[mm] = $signed(r_Cal_MM_rlst_d0[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*4 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*3]) 
-                                +  $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0])     ;
-        
+                                 + $signed(w_Psumfifo_out[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*4 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*3])     ;
+
 // -----> debug dot 
         assign debug_PsumData_T0[mm] = r_Cal_MM_rlst_d1[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*0];
         assign debug_PsumData_T1[mm] = r_Cal_MM_rlst_d1[mm][(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*2 - 1 : (`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS)*1];
@@ -351,15 +358,16 @@ generate
             r_Psumfifo_out_valid[mm] <= w_Cal_MM_rlst_valid[mm];
         end
 
-        assign w_Psumfifo_valid[mm] = r_Psumfifo_out_valid[mm] & r_PsumAdd_Flag;
+        assign w_Psumfifo_valid[mm] =  (r_Psumfifo_out_valid[mm] & r_PsumAdd_Flag) 
+                                    || (i_PsumFIFO_Grant[mm] ? i_PsumFIFO_Valid : 1'b0);
 
         Psum_slice_fifo u_Psum_slice_fifo (
             .clk        ( s_clk                                ),
-            .srst       ( s_rst                                ),
+            .srst       ( s_rst || i_Init_PrepareData          ),
             .din        ( r_Cal_MM_rlst_d1[mm]                 ),  // [79 : 0]
             .wr_en      ( r_Cal_MM_rlst_valid_d1[mm]           ),  
             
-            .rd_en      ( w_Psumfifo_valid[mm]                 ),  // TODO: FETCH DATA
+            .rd_en      ( w_Psumfifo_valid[mm]                 ), 
             .dout       ( w_Psumfifo_out[mm]                   ),  // [79 : 0]
             .full       ( w_psum_fifo_full[mm]                 ),
             .empty      ( w_psum_fifo_empty[mm]                )
@@ -368,6 +376,15 @@ generate
     end
 
 endgenerate
+
+// -- Psum fetch o_PsumFIFO_Data
+integer d;
+always@(*) begin
+    for (d = 0; d < `SYSTOLIC_UNIT_NUM; d = d + 1) begin
+        if (i_PsumFIFO_Grant[d])
+            o_PsumFIFO_Data <= w_Psumfifo_out[d];
+    end
+end
 
 // r_PsumAdd_Flag
 always@(posedge s_clk, posedge s_rst) begin
@@ -391,7 +408,6 @@ always@(posedge s_clk) begin
 end
 
 genvar row, col;
-
 generate
     
     for (col = 0; col < `SYSTOLIC_UNIT_NUM; col = col + 1) begin: PE_col
@@ -446,6 +462,7 @@ generate
 
 endgenerate
 
+assign o_Finish_Calc = r_MM_Calc_done && w_MtrxA_Empty;
 // --------------- Finite-State-Machine --------------- \\
 // Not Use
 

@@ -58,7 +58,7 @@
 
 /* -------------- systolic array --------------*/
 `define     PATCH_EMBED_WIDTH           32               // IMG_WIDTH / 4,  TIME_STEPS == 4
-`define     SYSTOLIC_UNIT_NUM           64
+`define     SYSTOLIC_UNIT_NUM           16               //  > 8
 `define     SYSTOLIC_DATA_WIDTH         8                // 2 bit * TIME_STEPS = 8 bit
 `define     SYSTOLIC_WEIGHT_WIDTH       8
 // e.g. A(M x K) B(K x N)  to avaid overflow : 

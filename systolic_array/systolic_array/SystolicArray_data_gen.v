@@ -26,6 +26,9 @@ module SystolicArray_data_gen (
 reg [`DATA_WIDTH - 1 : 0]                             mem [`MEM_LENGTH - 1 : 0]   ;
 reg [15:0]                                            r_MtrxA_cnt                 ;
 reg [15:0]                                            r_MtrxB_cnt                 ;
+reg [15:0]                                            r_baseaddrA                 ;
+reg [15:0]                                            r_baseaddrB                 ;
+
 reg                                                   r_init_flag                 ;
 
 parameter MtrxA_data_path = "E:/Desktop/spiking-transformer-master/Systolic_data/MtrxA.bin";
@@ -74,9 +77,19 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // --------------- MTRXA GEN --------------- \\ 
+// r_baseaddrA
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_baseaddrA <= 'd0;
+    else if (MtrxA_slice_done)
+        r_baseaddrA <= r_baseaddrA + 'd32;
+end
+
 // r_MtrxA_cnt
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
+        r_MtrxA_cnt <= 'd0;
+    else if (MtrxA_slice_done)
         r_MtrxA_cnt <= 'd0;
     else if (MtrxA_slice_ready && MtrxA_slice_valid)
         r_MtrxA_cnt <= r_MtrxA_cnt + 1'b1;
@@ -93,20 +106,30 @@ always@(posedge s_clk) begin
 end
 
 // MtrxA_slice_data 
-assign MtrxA_slice_data = mem[r_MtrxA_cnt];
+assign MtrxA_slice_data = mem[r_MtrxA_cnt + r_baseaddrA];
 
 // MtrxA_slice_done
 always@(posedge s_clk) begin
-    if (MtrxA_slice_ready && MtrxA_slice_valid && r_MtrxA_cnt == 128*4 - 2)
+    if (MtrxA_slice_ready && MtrxA_slice_valid && r_MtrxA_cnt == 32 - 2)
         MtrxA_slice_done <= 1'b1;
     else
         MtrxA_slice_done <= 1'b0;
 end
 
 // --------------- MTRXB GEN --------------- \\ 
+// r_baseaddrB
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_baseaddrB <= 'd0;
+    else if (MtrxB_slice_done)
+        r_baseaddrB <= r_baseaddrB + 'd32;
+end
+
 // r_MtrxB_cnt
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
+        r_MtrxB_cnt <= 'd0;
+    else if (MtrxB_slice_done)
         r_MtrxB_cnt <= 'd0;
     else if (MtrxB_slice_ready && MtrxB_slice_valid)
         r_MtrxB_cnt <= r_MtrxB_cnt + 1'b1;
@@ -123,11 +146,11 @@ always@(posedge s_clk) begin
 end
 
 // MtrxB_slice_data 
-assign MtrxB_slice_data = mem[r_MtrxB_cnt + `IMG_BASEADDR/8];
+assign MtrxB_slice_data = mem[r_MtrxB_cnt + `IMG_BASEADDR/8 + r_baseaddrB];
 
 // MtrxB_slice_done 
 always@(posedge s_clk) begin
-    if (MtrxB_slice_ready && MtrxB_slice_valid && r_MtrxB_cnt == 512 - 2)
+    if (MtrxB_slice_ready && MtrxB_slice_valid && r_MtrxB_cnt == 32 - 2)
         MtrxB_slice_done <= 1'b1;
     else
         MtrxB_slice_done <= 1'b0;
