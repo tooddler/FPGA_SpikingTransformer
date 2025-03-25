@@ -8,36 +8,43 @@
 `include "hyper_para.v"
 module top_spikingencoder_tb ();
 
-reg                                 s_clk                       ;
-reg                                 s_rst                       ;
+reg                                     s_clk                       ;
+reg                                     s_rst                       ;
 
-reg                                 sps_conv2_flag              ;
-reg                                 sps_conv3_flag              ;
-reg                                 sps_conv4_flag              ;
+reg                                     sps_conv2_flag              ;
+reg                                     sps_conv3_flag              ;
+reg                                     sps_conv4_flag              ;
 
-reg                                 sps_mp_flag                 ;
+reg                                     sps_mp_flag                 ;
 
-wire  [`DATA_WIDTH- 1 : 0]          burst_write_data            ;  
-wire  [`ADDR_SIZE - 1 : 0]          burst_write_addr            ;  
-wire  [`LEN_WIDTH - 1 : 0]          burst_write_len             ;  
-wire                                burst_write_req             ;   
-wire                                burst_write_valid           ; 
-wire                                burst_write_finish          ;
+wire  [`DATA_WIDTH- 1 : 0]              burst_write_data            ;  
+wire  [`ADDR_SIZE - 1 : 0]              burst_write_addr            ;  
+wire  [`LEN_WIDTH - 1 : 0]              burst_write_len             ;  
+wire                                    burst_write_req             ;   
+wire                                    burst_write_valid           ; 
+wire                                    burst_write_finish          ;
 
-wire [`DATA_WIDTH- 1 : 0]           burst_read_data             ;   
-wire [`ADDR_SIZE - 1 : 0]           burst_read_addr             ;   
-wire [`LEN_WIDTH - 1 : 0]           burst_read_len              ;   
-wire                                burst_read_req              ;    
-wire                                burst_read_valid            ;  
-wire                                burst_read_finish           ;
+wire [`DATA_WIDTH- 1 : 0]               burst_read_data             ;   
+wire [`ADDR_SIZE - 1 : 0]               burst_read_addr             ;   
+wire [`LEN_WIDTH - 1 : 0]               burst_read_len              ;   
+wire                                    burst_read_req              ;    
+wire                                    burst_read_valid            ;  
+wire                                    burst_read_finish           ;
 
-wire                                o_SpikingEncoder_out_done   ;    
-wire [`TIME_STEPS - 1 : 0]          o_SpikingEncoder_out        ;
-wire                                o_SpikingEncoder_out_valid  ;
+wire                                    o_SpikingEncoder_out_done   ;    
+wire [`TIME_STEPS - 1 : 0]              o_SpikingEncoder_out        ;
+wire                                    o_SpikingEncoder_out_valid  ;
 
-wire [`DATA_WIDTH - 1 : 0]          Eyeriss_weight_in           ;
-wire                                Eyeriss_weight_valid        ;
-wire                                Eyeriss_weight_ready        ;
+wire [`DATA_WIDTH - 1 : 0]              Eyeriss_weight_in           ;
+wire                                    Eyeriss_weight_valid        ;
+wire                                    Eyeriss_weight_ready        ;
+
+wire                                    w_data_valid                ;
+wire [`PATCH_EMBED_WIDTH - 1 : 0]       w_fmap                      ;
+wire [`PATCH_EMBED_WIDTH - 1 : 0]       w_patchdata                 ;
+
+wire [`PATCH_EMBED_WIDTH * 2 - 1 : 0]   w_ramout_data               ;        
+wire                                    w_ramout_ready              ;   
 
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
@@ -104,7 +111,23 @@ simple_eyeriss_top u_simple_eyeriss_top(
 
     .SpikingEncoder_out_done       ( o_SpikingEncoder_out_done  ),
     .SpikingEncoder_out            ( o_SpikingEncoder_out       ),
-    .SpikingEncoder_out_valid      ( o_SpikingEncoder_out_valid )
+    .SpikingEncoder_out_valid      ( o_SpikingEncoder_out_valid ),
+    
+    .o_data_valid                  ( w_data_valid               ),
+    .o_fmap                        ( w_fmap                     ),
+    .o_patchdata                   ( w_patchdata                )
+);
+
+PatchEmbed u_PatchEmbed(
+    .s_clk                         ( s_clk                      ),
+    .s_rst                         ( s_rst                      ),
+    .i_data_valid                  ( w_data_valid               ),
+    .i_fmap                        ( w_fmap                     ),
+    .i_patchdata                   ( w_patchdata                ),
+
+    .i_rd_addr                     ( 'd0                        ),
+    .o_ramout_data                 ( w_ramout_data              ),
+    .o_ramout_ready                ( w_ramout_ready             )
 );
 
 parameter spiking0_out_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/spiking0_out_out.txt";
@@ -480,6 +503,111 @@ always@(posedge s_clk) begin
         $fwrite(sps_lif4_file1, "%b\n", u_simple_eyeriss_top.u_simple_eyeriss_array.u_psum_callback.u_psum_lif_top.w_spikes_out[1]); 
         $fwrite(sps_lif4_file2, "%b\n", u_simple_eyeriss_top.u_simple_eyeriss_array.u_psum_callback.u_psum_lif_top.w_spikes_out[2]); 
         $fwrite(sps_lif4_file3, "%b\n", u_simple_eyeriss_top.u_simple_eyeriss_array.u_psum_callback.u_psum_lif_top.w_spikes_out[3]); 
+    end
+end
+
+// ======= EMBED PATCH PART =======
+parameter embedpatch_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t0.txt";
+parameter embedpatch_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t1.txt";
+parameter embedpatch_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t2.txt";
+parameter embedpatch_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t3.txt";
+
+integer embedpatch_file0, embedpatch_file1, embedpatch_file2, embedpatch_file3;
+initial begin
+    embedpatch_file0 = $fopen(embedpatch_out_t0_path, "w");
+    embedpatch_file1 = $fopen(embedpatch_out_t1_path, "w");
+    embedpatch_file2 = $fopen(embedpatch_out_t2_path, "w");
+    embedpatch_file3 = $fopen(embedpatch_out_t3_path, "w");
+end
+
+wire [1 : 0]        w_trsfrmrdata    [`PATCH_EMBED_WIDTH - 1 : 0];
+genvar nnnn;
+generate
+    for (nnnn = 0; nnnn < `PATCH_EMBED_WIDTH; nnnn = nnnn + 1) begin
+        assign w_trsfrmrdata[nnnn] = u_PatchEmbed.r_trsfrmrdata[2*nnnn + 1 : 2*nnnn];
+    end
+endgenerate
+
+integer embedpatch_num;
+always@(posedge s_clk) begin
+    if (w_ramout_ready) begin
+        $display("embed patch data get done !");
+        $fclose(embedpatch_file0);
+        $fclose(embedpatch_file1);
+        $fclose(embedpatch_file2);
+        $fclose(embedpatch_file3);
+    end
+    else if (u_PatchEmbed.r_trsfrmrdata_valid) begin
+        for (embedpatch_num = 0; embedpatch_num < 8; embedpatch_num = embedpatch_num + 1) begin
+            $fwrite(embedpatch_file0, "%d\n", w_trsfrmrdata[4*embedpatch_num + 0]); 
+            $fwrite(embedpatch_file1, "%d\n", w_trsfrmrdata[4*embedpatch_num + 1]); 
+            $fwrite(embedpatch_file2, "%d\n", w_trsfrmrdata[4*embedpatch_num + 2]); 
+            $fwrite(embedpatch_file3, "%d\n", w_trsfrmrdata[4*embedpatch_num + 3]); 
+        end
+    end
+end
+
+parameter embedpatch_in00_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in00_t0.txt";
+parameter embedpatch_in00_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in00_t1.txt";
+parameter embedpatch_in00_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in00_t2.txt";
+parameter embedpatch_in00_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in00_t3.txt";
+
+integer in00_embedpatch_file0, in00_embedpatch_file1, in00_embedpatch_file2, in00_embedpatch_file3;
+initial begin
+    in00_embedpatch_file0 = $fopen(embedpatch_in00_t0_path, "w");
+    in00_embedpatch_file1 = $fopen(embedpatch_in00_t1_path, "w");
+    in00_embedpatch_file2 = $fopen(embedpatch_in00_t2_path, "w");
+    in00_embedpatch_file3 = $fopen(embedpatch_in00_t3_path, "w");
+end
+
+integer embedpatch_num_in00;
+always@(posedge s_clk) begin
+    if (w_ramout_ready) begin
+        $display("in 00 embed patch data get done !");
+        $fclose(in00_embedpatch_file0);
+        $fclose(in00_embedpatch_file1);
+        $fclose(in00_embedpatch_file2);
+        $fclose(in00_embedpatch_file3);
+    end
+    else if (w_data_valid) begin
+        for (embedpatch_num_in00 = 0; embedpatch_num_in00 < 8; embedpatch_num_in00 = embedpatch_num_in00 + 1) begin
+            $fwrite(in00_embedpatch_file0, "%b\n", w_fmap[4*embedpatch_num_in00 + 0]); 
+            $fwrite(in00_embedpatch_file1, "%b\n", w_fmap[4*embedpatch_num_in00 + 1]); 
+            $fwrite(in00_embedpatch_file2, "%b\n", w_fmap[4*embedpatch_num_in00 + 2]); 
+            $fwrite(in00_embedpatch_file3, "%b\n", w_fmap[4*embedpatch_num_in00 + 3]); 
+        end
+    end
+end
+
+parameter embedpatch_in01_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in01_t0.txt";
+parameter embedpatch_in01_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in01_t1.txt";
+parameter embedpatch_in01_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in01_t2.txt";
+parameter embedpatch_in01_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_in01_t3.txt";
+
+integer in01_embedpatch_file0, in01_embedpatch_file1, in01_embedpatch_file2, in01_embedpatch_file3;
+initial begin
+    in01_embedpatch_file0 = $fopen(embedpatch_in01_t0_path, "w");
+    in01_embedpatch_file1 = $fopen(embedpatch_in01_t1_path, "w");
+    in01_embedpatch_file2 = $fopen(embedpatch_in01_t2_path, "w");
+    in01_embedpatch_file3 = $fopen(embedpatch_in01_t3_path, "w");
+end
+
+integer embedpatch_num_in01;
+always@(posedge s_clk) begin
+    if (w_ramout_ready) begin
+        $display("in 01 embed patch data get done !");
+        $fclose(in01_embedpatch_file0);
+        $fclose(in01_embedpatch_file1);
+        $fclose(in01_embedpatch_file2);
+        $fclose(in01_embedpatch_file3);
+    end
+    else if (w_data_valid) begin
+        for (embedpatch_num_in01 = 0; embedpatch_num_in01 < 8; embedpatch_num_in01 = embedpatch_num_in01 + 1) begin
+            $fwrite(in01_embedpatch_file0, "%b\n", w_patchdata[4*embedpatch_num_in01 + 0]); 
+            $fwrite(in01_embedpatch_file1, "%b\n", w_patchdata[4*embedpatch_num_in01 + 1]); 
+            $fwrite(in01_embedpatch_file2, "%b\n", w_patchdata[4*embedpatch_num_in01 + 2]); 
+            $fwrite(in01_embedpatch_file3, "%b\n", w_patchdata[4*embedpatch_num_in01 + 3]); 
+        end
     end
 end
 

@@ -10,7 +10,7 @@ module simple_eyeriss_top (
     input                                           s_clk                     ,
     input                                           s_rst                     ,
     // calculate done
-    input                                           SPS_part_done             ,
+    input                                           SPS_part_done             , // global rst
     // interact with weights RAM
     input         [`DATA_WIDTH - 1 : 0]             weight_in                 ,
     input                                           weight_valid              ,
@@ -18,8 +18,14 @@ module simple_eyeriss_top (
     // get spikes from SpikingEncoder module
     input                                           SpikingEncoder_out_done   ,
     input         [`TIME_STEPS - 1 : 0]             SpikingEncoder_out        ,
-    input                                           SpikingEncoder_out_valid  
+    input                                           SpikingEncoder_out_valid  , 
+    // send fmaps and patch
+    output reg                                      o_data_valid              ,
+    output reg    [`PATCH_EMBED_WIDTH - 1 : 0]      o_fmap                    ,
+    output reg    [`PATCH_EMBED_WIDTH - 1 : 0]      o_patchdata               
 );
+
+localparam P_MAXADDR = `FINAL_FMAPS_CHNNLS * 8 ;  // FIXME: ofmap_size = 384 x 8 x 8
 
 wire                                                 w_line_data_valid       ;
 wire [`IMG_WIDTH*`TIME_STEPS - 1 : 0]                w_line_data             ;
@@ -80,8 +86,17 @@ reg   [`IMG_WIDTH*`TIME_STEPS - 1 : 0]               Control_TmpRam01_doutb  ;
 wire  [`IMG_WIDTH*`TIME_STEPS - 1 : 0]               w_spikes_TmpRam00_doutb ;
 wire  [`IMG_WIDTH*`TIME_STEPS - 1 : 0]               w_spikes_TmpRam01_doutb ;
 
+wire                                                 w_sps_DataGetReady      ;
+wire  [12 : 0]                                       w_Final_TmpRam00_addrb  ; 
+wire  [12 : 0]                                       w_Final_TmpRam01_addrb  ; 
+
 reg  [12:0]                                          r_TmpRam00_wraddr       ;
 reg                                                  r_TmpRam00_mode         ;
+reg  [12:0]                                          r_GetData2Attnpart_addr ;
+reg                                                  r_sps_DataGetReady      ;
+reg                                                  r_data_valid_d0         ;
+reg                                                  r_data_valid_d1         ;
+reg                                                  r_data_valid_d2         ;
 
 assign w_TmpRam00_wraddr    = r_TmpRam00_mode ? Control_TmpRam00_addra : r_TmpRam00_wraddr ;
 assign w_TmpRam00_valid     = r_TmpRam00_mode ? Control_TmpRam00_wea   : w_line_data_valid ;
@@ -102,6 +117,9 @@ assign Control_out_done     = conv_or_maxpool ? Pooling_out_done   : Array_out_d
 
 assign Pooling_out_ready    = conv_or_maxpool ? Control_out_ready : 1'b0                   ;
 assign Array_out_ready      = conv_or_maxpool ? 1'b0 : Control_out_ready                   ;
+
+assign w_Final_TmpRam00_addrb = r_sps_DataGetReady ? r_GetData2Attnpart_addr : Control_TmpRam00_addrb ;
+assign w_Final_TmpRam01_addrb = r_sps_DataGetReady ? r_GetData2Attnpart_addr : Control_TmpRam01_addrb ;
 
 // r_TmpRam00_mode
 always@(posedge s_clk, posedge s_rst) begin
@@ -124,8 +142,45 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 always@(posedge s_clk) begin
+    r_sps_DataGetReady <= w_sps_DataGetReady;
+    r_data_valid_d1    <= r_data_valid_d0   ;
+    r_data_valid_d2    <= r_data_valid_d1   ;
+    o_data_valid       <= r_data_valid_d2   ;
+
     Control_TmpRam00_doutb <= w_spikes_TmpRam00_doutb ;
     Control_TmpRam01_doutb <= w_spikes_TmpRam01_doutb ;
+end
+
+// o_fmap     
+always@(posedge s_clk) begin
+    if (r_sps_DataGetReady)
+        o_fmap <= Control_TmpRam00_doutb[`PATCH_EMBED_WIDTH - 1 : 0];
+    else   
+        o_fmap <= 'd0;
+end
+
+// o_patchdata
+always@(posedge s_clk) begin
+    if (r_sps_DataGetReady)
+        o_patchdata <= Control_TmpRam01_doutb[`PATCH_EMBED_WIDTH - 1 : 0];
+    else   
+        o_patchdata <= 'd0;
+end
+
+// r_GetData2Attnpart_addr
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_GetData2Attnpart_addr <= 'd0;
+    else if (r_data_valid_d0)
+        r_GetData2Attnpart_addr <= r_GetData2Attnpart_addr + 1'b1;
+end
+
+// r_data_valid
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || r_GetData2Attnpart_addr == P_MAXADDR - 1)
+        r_data_valid_d0 <= 1'b0;
+    else if (w_sps_DataGetReady && ~r_sps_DataGetReady)
+        r_data_valid_d0 <= 1'b1;
 end
 
 // --------------- instantiation --------------- \\ 
@@ -146,6 +201,7 @@ simple_eyeriss_Controller u_simple_eyeriss_Controller(
     .SpikingEncoder_out_done   ( SpikingEncoder_out_done  ),
     .SPS_part_done             ( SPS_part_done            ), 
     .o_fetch_code_done         ( fetch_code_done          ),
+    .o_sps_DataGetReady        ( w_sps_DataGetReady       ),
 
     .o_code_valid              ( code_valid               ),
     .o_conv_in_ch              ( conv_in_ch               ),
@@ -235,7 +291,7 @@ SpikesTmpRam SpikesTmpRam_m00 (
     .dina                      ( w_TmpRam00_data           ),  // input wire [127 : 0] dina
 
     .clkb                      ( s_clk                     ),  // input wire clkb
-    .addrb                     ( Control_TmpRam00_addrb    ),  // input wire [12 : 0] addrb
+    .addrb                     ( w_Final_TmpRam00_addrb    ),  // input wire [12 : 0] addrb
     .doutb                     ( w_spikes_TmpRam00_doutb   )   // output wire [127 : 0] doutb
 );
 
@@ -246,7 +302,7 @@ SpikesTmpRam SpikesTmpRam_m01 (
     .dina                      ( Control_TmpRam01_dina     ),  // input wire [127 : 0] dina
 
     .clkb                      ( s_clk                     ),  // input wire clkb
-    .addrb                     ( Control_TmpRam01_addrb    ),  // input wire [12 : 0] addrb
+    .addrb                     ( w_Final_TmpRam01_addrb    ),  // input wire [12 : 0] addrb
     .doutb                     ( w_spikes_TmpRam01_doutb   )   // output wire [127 : 0] doutb
 );
 

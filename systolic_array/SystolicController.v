@@ -9,18 +9,15 @@
 module SystolicController (
     input                                            s_clk                  ,
     input                                            s_rst                  ,    
-
     // interact with PatchEmbed module
     output reg  [11 : 0]                             o_rd_addr              ,
     input       [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     i_ramout_data          , // ** Attn : delay 2 clk **      
     input                                            i_ramout_ready         ,
-
     // interact with weight fifo
     input       [`DATA_WIDTH - 1 : 0]                i_weight_out           ,
     output reg                                       o_weight_valid         , 
     input                                            i_weight_ready         , // Not for handshake
     output                                           load_w_finish          , // TODO : rst weights fifo
-
     // interact with Systolic Array
     output reg                                       o_Init_PrepareData     ,
     input                                            i_Finish_Calc          ,

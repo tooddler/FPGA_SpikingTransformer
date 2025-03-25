@@ -13,6 +13,7 @@ module simple_eyeriss_Controller (
     input                                            SpikingEncoder_out_done   ,
     input                                            SPS_part_done             ,
     output wire                                      o_fetch_code_done         ,
+    output reg                                       o_sps_DataGetReady        ,
     // -- Code 
     output reg                                       o_code_valid              ,
     output wire [15:0]                               o_conv_in_ch              ,
@@ -173,6 +174,14 @@ always@(posedge s_clk, posedge s_rst) begin
         r_conv_bias_scale <= Conv_bias_scale;
         r_conv_or_maxpool <= Conv_or_Maxpool;
     end
+end
+
+// data ready signal  ->  o_sps_DataGetReady
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst || SPS_part_done)
+        o_sps_DataGetReady <= 1'b0;
+    else if (s_curr_state == S_DONE && w_fetch_code_done)
+        o_sps_DataGetReady <= 1'b1;
 end
 
 // r_TmpRam_switch

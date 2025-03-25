@@ -9,8 +9,6 @@
 module PatchEmbed (
     input                                            s_clk                  ,
     input                                            s_rst                  ,
-    // Registers Reset 
-    input                                            i_Sys_Clear            ,
     // get fmaps and patch
     input                                            i_data_valid           ,
     input       [`PATCH_EMBED_WIDTH - 1 : 0]         i_fmap                 ,
@@ -50,7 +48,7 @@ end
 
 // r_wr_addr
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || i_Sys_Clear)
+    if (s_rst)
         r_wr_addr <= 'd0;
     else if (r_trsfrmrdata_valid)
         r_wr_addr <= r_wr_addr + 1'b1;
@@ -58,7 +56,7 @@ end
 
 // o_ramout_ready
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || i_Sys_Clear)
+    if (s_rst)
         o_ramout_ready <= 1'b0;
     else if (r_trsfrmrdata_valid && ~i_data_valid)
         o_ramout_ready <= 1'b1;
