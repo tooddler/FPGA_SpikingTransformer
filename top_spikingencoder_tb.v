@@ -135,7 +135,6 @@ parameter spiking1_out_path = "E:/Desktop/spiking-transformer-master/data4fpga_b
 parameter spiking2_out_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/spiking2_out_out.txt";
 parameter spiking3_out_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/spiking3_out_out.txt";
 
-
 integer file0, file1, file2, file3;
 initial begin
     file0 = $fopen(spiking0_out_path, "w");
@@ -507,6 +506,22 @@ always@(posedge s_clk) begin
 end
 
 // ======= EMBED PATCH PART =======
+parameter PATCH_EMBED_coe_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/PATCH_EMBED_coe.txt";
+integer embedpatch_file;
+initial begin
+    embedpatch_file = $fopen(PATCH_EMBED_coe_path, "w");
+end
+
+always@(posedge s_clk) begin
+    if (w_ramout_ready) begin
+        $display("coe embed patch data get done !");
+        $fclose(embedpatch_file);
+    end
+    else if (u_PatchEmbed.r_trsfrmrdata_valid) begin
+        $fwrite(embedpatch_file, "%h;\n", u_PatchEmbed.r_trsfrmrdata); 
+    end
+end
+
 parameter embedpatch_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t0.txt";
 parameter embedpatch_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t1.txt";
 parameter embedpatch_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/embedpatch_out_t2.txt";

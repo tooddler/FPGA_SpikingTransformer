@@ -27,7 +27,7 @@ module SystolicArray (
     // -- PsumFIFO Data Slices
     input       [`SYSTOLIC_UNIT_NUM - 1 : 0]          i_PsumFIFO_Grant    ,
     input                                             i_PsumFIFO_Valid    ,
-    output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]        o_PsumFIFO_Data  
+    output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]        o_PsumFIFO_Data=0  
 );
 
 // --- wire ---  
@@ -75,6 +75,7 @@ reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Psumfifo_out_
 reg                                                              r_PsumAdd_Flag                 ;
 
 reg                                                              r_MM_Calc_done                 ;
+reg                                                              r_MM_Calc_done_delay           ;
 reg                                                              r_MM_Calc_valid_delay=0        ;
 reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Cal_MM_rlst_valid_d0=0       ;  
 reg  [`SYSTOLIC_UNIT_NUM - 1 : 0]                                r_Cal_MM_rlst_valid_d1=0       ;  
@@ -401,6 +402,8 @@ end
 
 // r_MM_Calc_done
 always@(posedge s_clk) begin
+    r_MM_Calc_done_delay <= r_MM_Calc_done;
+
     if (r_MM_Calc_valid_delay && ~r_Cal_MM_rlst_valid_d1[`SYSTOLIC_UNIT_NUM - 1])
         r_MM_Calc_done <= 1'b1;
     else
@@ -462,7 +465,7 @@ generate
 
 endgenerate
 
-assign o_Finish_Calc = r_MM_Calc_done && w_MtrxA_Empty;
+assign o_Finish_Calc = r_MM_Calc_done_delay && w_MtrxA_Empty;
 // --------------- Finite-State-Machine --------------- \\
 // Not Use
 

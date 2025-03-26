@@ -30,12 +30,19 @@ wire                                full                   ;
 wire                                empty                  ;
 wire                                w_almost_full          ;
 wire                                w_almost_empty         ;
-
-reg     [`ADDR_SIZE - 1 : 0]        r_mtrx_baseaddr00      ;
-reg     [`ADDR_SIZE - 1 : 0]        r_mtrx_baseaddr01      ;
-
 reg                                 r_fifo_rst_flag        ;
 
+// ---> debug dot
+wire [7:0]      debug_weight_array [7:0];
+
+genvar k;
+generate
+    for (k = 0; k < 8; k = k + 1) begin
+        assign debug_weight_array[k] = rd_burst_data[8*(k+1) - 1 : 8*k];
+    end
+endgenerate
+
+// ---> end debug dot
 assign rd_burst_len         =       'd32                   ;
 assign o_weight_ready       =       ~w_almost_empty        ;
 

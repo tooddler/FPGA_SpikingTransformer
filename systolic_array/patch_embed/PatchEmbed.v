@@ -25,12 +25,10 @@ wire   [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     w_ramout_data           ;
 reg                                         r_trsfrmrdata_valid=0   ;
 reg    [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     r_trsfrmrdata=0         ;
 reg    [11 : 0]                             r_wr_addr               ;
-reg    [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     r_ramout_data           ;
 
 // r_trsfrmrdata_valid
 always@(posedge s_clk) begin
-    r_ramout_data <= w_ramout_data;
-    o_ramout_data <= r_ramout_data;
+    o_ramout_data <= w_ramout_data;
 
     if (i_data_valid)
         r_trsfrmrdata_valid <= 1'b1;
@@ -57,7 +55,7 @@ end
 // o_ramout_ready
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
-        o_ramout_ready <= 1'b0;
+        o_ramout_ready <= 1'b1;  // XXX : JUST FOR SIMULATION
     else if (r_trsfrmrdata_valid && ~i_data_valid)
         o_ramout_ready <= 1'b1;
 end

@@ -17,7 +17,7 @@ module SystolicController (
     input       [`DATA_WIDTH - 1 : 0]                i_weight_out           ,
     output reg                                       o_weight_valid         , 
     input                                            i_weight_ready         , // Not for handshake
-    output                                           load_w_finish          , // TODO : rst weights fifo
+    output wire                                      load_w_finish          , // TODO : rst weights fifo
     // interact with Systolic Array
     output reg                                       o_Init_PrepareData     ,
     input                                            i_Finish_Calc          ,
@@ -45,6 +45,7 @@ localparam  S_IDLE       =   0 ,
             S_FETCH_DATA =   2 ;
 
 // --- wire ---
+assign load_w_finish = 1'b0; // FIXME: ONLY SIM
 
 // --- reg ---
 reg  [2 : 0]                    s_curr_state            ;
@@ -171,7 +172,7 @@ always@(posedge s_clk, posedge s_rst) begin
     else if (s_curr_state == S_IDLE)
         o_rd_addr <= r_rd_baseaddr;
     else if (r_Rd_data_valid_pre0 && r_MtrxA_AddFlag)
-        o_rd_addr <= o_rd_addr + 'd8;
+        o_rd_addr <= o_rd_addr + 'd7;
     else if (r_Rd_data_valid_pre0)
         o_rd_addr <= o_rd_addr + 1'b1;
 end
