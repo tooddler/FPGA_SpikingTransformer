@@ -34,16 +34,23 @@ wire                                    w_Finish_Calc       ;
 
 wire [`SYSTOLIC_UNIT_NUM - 1 : 0]       w_PsumFIFO_Grant    ;
 wire                                    w_PsumFIFO_Valid    ;
+wire                                    w_PsumFIFO_Finish   ;
 reg                                     r_PsumFIFO_Valid    ;
+
+reg                                     r_PsumFIFO_Finish_d0;
+reg                                     r_PsumFIFO_Finish_d1;
 
 wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_PsumFIFO_Data     ;
 
-wire [`DATA_WIDTH- 1 : 0]               rd_burst_data       ;
-wire [`ADDR_SIZE - 1 : 0]               rd_burst_addr       ;
-wire [`LEN_WIDTH - 1 : 0]               rd_burst_len        ;
-wire                                    rd_burst_req        ;
-wire                                    rd_burst_valid      ;
-wire                                    rd_burst_finish     ;
+wire [`DATA_WIDTH- 1 : 0]               M_lq_rd_burst_data   ;
+wire [`ADDR_SIZE - 1 : 0]               M_lq_rd_burst_addr   ;
+wire [`LEN_WIDTH - 1 : 0]               M_lq_rd_burst_len    ;
+wire                                    M_lq_rd_burst_req    ;
+wire                                    M_lq_rd_burst_valid  ;
+wire                                    M_lq_rd_burst_finish ;
+
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_PsumData          ;
+wire                                    w_PsumValid         ;
 
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
@@ -67,12 +74,12 @@ ddr_sim_spikformer u_ddr_sim_spikformer(
     .burst_write_valid   (   ),
     .burst_write_finish  (   ),
 
-    .burst_read_data     ( rd_burst_data       ),
-    .burst_read_addr     ( rd_burst_addr       ),
-    .burst_read_len      ( rd_burst_len        ),
-    .burst_read_req      ( rd_burst_req        ),
-    .burst_read_valid    ( rd_burst_valid      ),
-    .burst_read_finish   ( rd_burst_finish     )
+    .burst_read_data     ( M_lq_rd_burst_data   ),
+    .burst_read_addr     ( M_lq_rd_burst_addr   ),
+    .burst_read_len      ( M_lq_rd_burst_len    ),
+    .burst_read_req      ( M_lq_rd_burst_req    ),
+    .burst_read_valid    ( M_lq_rd_burst_valid  ),
+    .burst_read_finish   ( M_lq_rd_burst_finish )
 );
 
 PatchEmbed u_PatchEmbed (
@@ -86,21 +93,23 @@ PatchEmbed u_PatchEmbed (
     .o_ramout_ready         ( w_ramout_ready    )
 );
 
-weight_fifo_v1 u_weight_fifo_v1(
-    .s_clk                  ( s_clk            ),
-    .s_rst                  ( s_rst            ),
+weight_fifo_v1 #(
+    .WEIGHTS_BASEADDR       ( `WEIGHTS_Q_BASEADDR  )
+) u_weight_fifo_linear_Q(
+    .s_clk                  ( s_clk                ),
+    .s_rst                  ( s_rst                ),
 
-    .rd_burst_data          ( rd_burst_data    ),
-    .rd_burst_addr          ( rd_burst_addr    ),
-    .rd_burst_len           ( rd_burst_len     ),
-    .rd_burst_req           ( rd_burst_req     ),
-    .rd_burst_valid         ( rd_burst_valid   ),
-    .rd_burst_finish        ( rd_burst_finish  ),
+    .rd_burst_data          ( M_lq_rd_burst_data   ),
+    .rd_burst_addr          ( M_lq_rd_burst_addr   ),
+    .rd_burst_len           ( M_lq_rd_burst_len    ),
+    .rd_burst_req           ( M_lq_rd_burst_req    ),
+    .rd_burst_valid         ( M_lq_rd_burst_valid  ),
+    .rd_burst_finish        ( M_lq_rd_burst_finish ),
 
-    .o_weight_out           ( w_weight_out     ),
-    .i_weight_valid         ( w_weight_valid   ),
-    .o_weight_ready         ( w_weight_ready   ),
-    .load_w_finish          ( load_w_finish    )
+    .o_weight_out           ( w_weight_out         ),
+    .i_weight_valid         ( w_weight_valid       ),
+    .o_weight_ready         ( w_weight_ready       ),
+    .load_w_finish          ( load_w_finish        )
 );
 
 SystolicController u_SystolicController(
@@ -130,7 +139,11 @@ SystolicController u_SystolicController(
 
     .o_PsumFIFO_Grant    ( w_PsumFIFO_Grant    ),
     .o_PsumFIFO_Valid    ( w_PsumFIFO_Valid    ),
-    .i_PsumFIFO_Data     ( w_PsumFIFO_Data     )
+    .i_PsumFIFO_Data     ( w_PsumFIFO_Data     ),
+
+    .o_Psum_Finish       ( w_PsumFIFO_Finish   ),
+    .o_PsumData          ( w_PsumData          ),
+    .o_PsumValid         ( w_PsumValid         )
 );
 
 SystolicArray u_SystolicArray(
@@ -168,20 +181,21 @@ initial begin
 end
 
 always@(posedge s_clk) begin
-    r_PsumFIFO_Valid <= w_PsumFIFO_Valid;
+    r_PsumFIFO_Finish_d0 <= w_PsumFIFO_Finish    ;
+    r_PsumFIFO_Finish_d1 <= r_PsumFIFO_Finish_d0 ;
 
-    if (r_PsumFIFO_Valid & ~w_PsumFIFO_Valid) begin
+    if (r_PsumFIFO_Finish_d1) begin
         $display("linear_q_out cal done");
         $fclose(file0);
         $fclose(file1);
         $fclose(file2);
         $fclose(file3);
     end
-    else if (w_PsumFIFO_Valid) begin
-        $fwrite(file0, "%d\n", $signed(w_PsumFIFO_Data[1*20 - 1 : 0*20])); 
-        $fwrite(file1, "%d\n", $signed(w_PsumFIFO_Data[2*20 - 1 : 1*20])); 
-        $fwrite(file2, "%d\n", $signed(w_PsumFIFO_Data[3*20 - 1 : 2*20])); 
-        $fwrite(file3, "%d\n", $signed(w_PsumFIFO_Data[4*20 - 1 : 3*20])); 
+    else if (w_PsumValid) begin
+        $fwrite(file0, "%d\n", $signed(w_PsumData[1*20 - 1 : 0*20])); 
+        $fwrite(file1, "%d\n", $signed(w_PsumData[2*20 - 1 : 1*20])); 
+        $fwrite(file2, "%d\n", $signed(w_PsumData[3*20 - 1 : 2*20])); 
+        $fwrite(file3, "%d\n", $signed(w_PsumData[4*20 - 1 : 3*20])); 
     end
 end
 

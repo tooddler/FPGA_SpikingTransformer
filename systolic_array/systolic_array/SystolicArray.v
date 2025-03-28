@@ -364,7 +364,7 @@ generate
 
         Psum_slice_fifo u_Psum_slice_fifo (
             .clk        ( s_clk                                ),
-            .srst       ( s_rst || i_Init_PrepareData          ),
+            .srst       ( s_rst                                ),
             .din        ( r_Cal_MM_rlst_d1[mm]                 ),  // [79 : 0]
             .wr_en      ( r_Cal_MM_rlst_valid_d1[mm]           ),  
             
@@ -421,22 +421,22 @@ generate
         for (row = 0; row < `SYSTOLIC_UNIT_NUM; row = row + 1) begin: PE_row
 
             Systolic_pe u_Systolic_pe(
-                .s_clk           ( s_clk                                                  ),
-                .s_rst           ( s_rst                                                  ),
+                .s_clk           ( s_clk                                                              ),
+                .s_rst           ( s_rst                                                              ),
 
-                .weight_LoadPtr  ( r_LoadMtrxB_Pointer[0]                                 ),
-                .weight_CalcPtr  ( r_CalcMtrxB_Pointer[0]                                 ),
-                .weight_valid    ( Systolic_weight_valid[col*`SYSTOLIC_UNIT_NUM + row]    ),
-                .weights         ( r_Systolic_Weights[row]                                ),
+                .weight_LoadPtr  ( r_LoadMtrxB_Pointer[0]                                             ),
+                .weight_CalcPtr  ( r_CalcMtrxB_Pointer[0]                                             ),
+                .weight_valid    ( Systolic_weight_valid[col*`SYSTOLIC_UNIT_NUM + row] & ~w_MtrxB_Full),
+                .weights         ( r_Systolic_Weights[row]                                            ),
 
-                .in_data_valid   ( w_in_data_valid[col*`SYSTOLIC_UNIT_NUM + row]          ),
-                .in_raw_data     ( w_in_raw_data[col*`SYSTOLIC_UNIT_NUM + row]            ),
-                .out_data_valid  ( w_out_data_valid[col*`SYSTOLIC_UNIT_NUM + row]         ),
-                .out_raw_data    ( w_out_raw_data[col*`SYSTOLIC_UNIT_NUM + row]           ),
+                .in_data_valid   ( w_in_data_valid[col*`SYSTOLIC_UNIT_NUM + row]                      ),
+                .in_raw_data     ( w_in_raw_data[col*`SYSTOLIC_UNIT_NUM + row]                        ),
+                .out_data_valid  ( w_out_data_valid[col*`SYSTOLIC_UNIT_NUM + row]                     ),
+                .out_raw_data    ( w_out_raw_data[col*`SYSTOLIC_UNIT_NUM + row]                       ),
 
-                .in_psum_data    ( w_in_psum_data[col*`SYSTOLIC_UNIT_NUM + row]           ),
-                .out_psum_valid  ( w_out_psum_valid[col*`SYSTOLIC_UNIT_NUM + row]         ),
-                .out_psum_data   ( w_out_psum_data[col*`SYSTOLIC_UNIT_NUM + row]          )
+                .in_psum_data    ( w_in_psum_data[col*`SYSTOLIC_UNIT_NUM + row]                       ),
+                .out_psum_valid  ( w_out_psum_valid[col*`SYSTOLIC_UNIT_NUM + row]                     ),
+                .out_psum_data   ( w_out_psum_data[col*`SYSTOLIC_UNIT_NUM + row]                      )
             );
 
             if (row > 0) begin

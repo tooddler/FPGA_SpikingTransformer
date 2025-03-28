@@ -38,7 +38,7 @@ initial begin
     // load weight
     file = $fopen(weight_data_path, "rb");
     addr = 0;
-    first_addr = `WEIGHTS_QKV_BASEADDR / 8;
+    first_addr = `WEIGHTS_Q_BASEADDR / 8;
     while (!$feof(file)) begin
         o = $fread(byte_data, file);
         mem[first_addr + addr] = {byte_data[7], byte_data[6], byte_data[5], byte_data[4], byte_data[3], byte_data[2], byte_data[1], byte_data[0]};

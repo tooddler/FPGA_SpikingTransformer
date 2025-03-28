@@ -65,5 +65,8 @@
 // psum_width = SYSTOLIC_DATA_WIDTH / TIME_STEPS * 8bit(weight) + log2(K)
 `define     SYSTOLIC_PSUM_WIDTH         80               // 20 bit * TIME_STEPS = 64 bit    
 // qkv_linearWeights
-`define     WEIGHTS_QKV_BASEADDR        32'h2000_0000
+`define     WEIGHTS_Q_BASEADDR          32'h2000_0000    // end -> 32'h2002_4000
+`define     WEIGHTS_K_BASEADDR          32'h2003_0000    // end -> 32'h2005_4000
+`define     WEIGHTS_V_BASEADDR          32'h2006_0000    // end -> 32'h2007_4000
 `define     FINAL_FMAPS_CHNNLS          384
+`define     FINAL_FMAPS_WIDTH           64

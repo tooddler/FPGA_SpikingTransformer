@@ -9,7 +9,9 @@
 */
 
 `include "../../hyper_para.v"
-module weight_fifo_v1 (
+module weight_fifo_v1 #(
+    parameter WEIGHTS_BASEADDR = `WEIGHTS_Q_BASEADDR
+)(
     input                                        s_clk              ,
     input                                        s_rst              , 
     // interact with ddr
@@ -26,6 +28,9 @@ module weight_fifo_v1 (
     input                                        load_w_finish     
 );
 
+localparam P_MAX_TIMES = `FINAL_FMAPS_CHNNLS * `FINAL_FMAPS_CHNNLS / (32 << $clog2(`DATA_WIDTH / 8)); // 576
+localparam P_MAX_ADDR  = (P_MAX_TIMES - 1) * (32 << $clog2(`DATA_WIDTH / 8));
+
 wire                                full                   ;
 wire                                empty                  ;
 wire                                w_almost_full          ;
@@ -38,7 +43,7 @@ wire [7:0]      debug_weight_array [7:0];
 genvar k;
 generate
     for (k = 0; k < 8; k = k + 1) begin
-        assign debug_weight_array[k] = rd_burst_data[8*(k+1) - 1 : 8*k];
+        assign debug_weight_array[k] = o_weight_out[8*(k+1) - 1 : 8*k];
     end
 endgenerate
 
@@ -49,7 +54,9 @@ assign o_weight_ready       =       ~w_almost_empty        ;
 // rd_burst_addr
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst || r_fifo_rst_flag)
-        rd_burst_addr <= `WEIGHTS_QKV_BASEADDR;
+        rd_burst_addr <= WEIGHTS_BASEADDR;
+    else if (rd_burst_finish && rd_burst_addr == WEIGHTS_BASEADDR + P_MAX_ADDR)
+        rd_burst_addr <= WEIGHTS_BASEADDR;
     else if (rd_burst_finish)
         rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
 end

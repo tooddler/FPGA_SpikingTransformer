@@ -17,7 +17,7 @@ module SystolicController (
     input       [`DATA_WIDTH - 1 : 0]                i_weight_out           ,
     output reg                                       o_weight_valid         , 
     input                                            i_weight_ready         , // Not for handshake
-    output wire                                      load_w_finish          , // TODO : rst weights fifo
+    output wire                                      load_w_finish          ,
     // interact with Systolic Array
     output reg                                       o_Init_PrepareData     ,
     input                                            i_Finish_Calc          ,
@@ -34,33 +34,48 @@ module SystolicController (
     // -- fetch data from PsumFIFO
     output reg   [`SYSTOLIC_UNIT_NUM - 1 : 0]        o_PsumFIFO_Grant       ,
     output reg                                       o_PsumFIFO_Valid       ,
-    input        [`SYSTOLIC_PSUM_WIDTH - 1 : 0]      i_PsumFIFO_Data      
+    input        [`SYSTOLIC_PSUM_WIDTH - 1 : 0]      i_PsumFIFO_Data        ,
+    // -- Send data 
+    output reg                                       o_Psum_Finish          , 
+    output reg   [`SYSTOLIC_PSUM_WIDTH - 1 : 0]      o_PsumData             ,
+    output reg                                       o_PsumValid        
 );
 
 localparam MAX_MTRXB_CNT    = (`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM * `QUAN_BITS) / `DATA_WIDTH ; // 32
-localparam MAX_LOAD_ONELINE = `FINAL_FMAPS_CHNNLS / `SYSTOLIC_UNIT_NUM                             ; // 24
+localparam MAX_LOAD_ONELINE = `FINAL_FMAPS_CHNNLS  / `SYSTOLIC_UNIT_NUM                            ; // 24
+localparam P_PER_PSUMWIDTH  = `SYSTOLIC_PSUM_WIDTH / `TIME_STEPS                                   ; // 20
 
 localparam  S_IDLE       =   0 ,
             S_LOAD_DATA  =   1 ,
-            S_FETCH_DATA =   2 ;
+            S_FETCH_DATA =   2 ,
+            S_DONE       =   3 ;
 
-// --- wire ---
 assign load_w_finish = 1'b0; // FIXME: ONLY SIM
+// --- wire ---
+wire                                        w_BaseAddr_AddFlag      ;
+wire signed [15 : 0]                        w_ROM_bias_out          ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]         w_Psum_tmpdata          ;
 
 // --- reg ---
-reg  [2 : 0]                    s_curr_state            ;
-reg  [2 : 0]                    s_next_state            ;
+reg  [2 : 0]                                s_curr_state            ;
+reg  [2 : 0]                                s_next_state            ;
 
-reg  [9 : 0]                    r_MtrxA_cnt             ;
-reg  [9 : 0]                    r_MtrxB_cnt             ;
-reg                             r_MtrxA_AddFlag         ;
-reg                             r_Rd_data_valid_pre0=0  ;
-reg                             r_Rd_data_valid_pre1=0  ;
-reg                             r_Rd_data_done_pre0=0   ;
-reg                             r_Rd_data_done_pre1=0   ;
-reg  [11 : 0]                   r_rd_baseaddr           ;
-reg  [9 : 0]                    r_LoadFullLine_cnt      ;
-reg  [9 : 0]                    r_PsumFIFO_cnt          ;
+reg  [9 : 0]                                r_MtrxA_cnt             ;
+reg  [9 : 0]                                r_MtrxB_cnt             ;
+reg                                         r_MtrxA_AddFlag         ;
+reg                                         r_Rd_data_valid_pre0=0  ;
+reg                                         r_Rd_data_valid_pre1=0  ;
+reg                                         r_Rd_data_done_pre0=0   ;
+reg                                         r_Rd_data_done_pre1=0   ;
+reg  [11 : 0]                               r_rd_baseaddr           ;
+reg  [9 : 0]                                r_LoadFullLine_cnt      ; // get Psum
+reg  [9 : 0]                                r_LoadFullWeights_cnt   ; // input-baseaddr change
+reg  [9 : 0]                                r_PsumFIFO_cnt          ;
+reg  [8 : 0]                                r_ROM_addra             ;
+reg  [8 : 0]                                r_ROM_BaseAddra         ;
+reg  [3 : 0]                                r_ROM_Cnt               ;
+reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]         r_PsumFIFO_Data         ;
+reg                                         r_PsumFIFO_Valid        ;
 
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
@@ -157,11 +172,23 @@ always@(posedge s_clk, posedge s_rst) begin
         r_LoadFullLine_cnt <= r_LoadFullLine_cnt + 1'b1;
 end
 
+assign w_BaseAddr_AddFlag = r_LoadFullWeights_cnt == MAX_LOAD_ONELINE - 1 && r_PsumFIFO_cnt == `SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1 ;
+
+// r_LoadFullWeights_cnt
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_LoadFullWeights_cnt <= 'd0;
+    else if (w_BaseAddr_AddFlag)
+        r_LoadFullWeights_cnt <= 'd0;
+    else if (r_PsumFIFO_cnt == `SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1)
+        r_LoadFullWeights_cnt <= r_LoadFullWeights_cnt + 1'b1;
+end
+
 // r_rd_baseaddr
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_rd_baseaddr <= 'd0;
-    else if (r_LoadFullLine_cnt == MAX_LOAD_ONELINE - 1 && r_Rd_data_done_pre0) // S_LOAD_DATA -> S_FETCH_DATA
+    else if (w_BaseAddr_AddFlag)
         r_rd_baseaddr <= r_rd_baseaddr + 'd2;
 end
 
@@ -186,6 +213,11 @@ always@(posedge s_clk) begin
 end
 
 // --------------- Psum Data fetch proc --------------- \\ 
+assign w_Psum_tmpdata[P_PER_PSUMWIDTH*1 - 1 : P_PER_PSUMWIDTH*0] = $signed(w_ROM_bias_out) + $signed(r_PsumFIFO_Data[P_PER_PSUMWIDTH*1 - 1 : P_PER_PSUMWIDTH*0]);
+assign w_Psum_tmpdata[P_PER_PSUMWIDTH*2 - 1 : P_PER_PSUMWIDTH*1] = $signed(w_ROM_bias_out) + $signed(r_PsumFIFO_Data[P_PER_PSUMWIDTH*2 - 1 : P_PER_PSUMWIDTH*1]);
+assign w_Psum_tmpdata[P_PER_PSUMWIDTH*3 - 1 : P_PER_PSUMWIDTH*2] = $signed(w_ROM_bias_out) + $signed(r_PsumFIFO_Data[P_PER_PSUMWIDTH*3 - 1 : P_PER_PSUMWIDTH*2]);
+assign w_Psum_tmpdata[P_PER_PSUMWIDTH*4 - 1 : P_PER_PSUMWIDTH*3] = $signed(w_ROM_bias_out) + $signed(r_PsumFIFO_Data[P_PER_PSUMWIDTH*4 - 1 : P_PER_PSUMWIDTH*3]);
+
 // o_PsumFIFO_Grant
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
@@ -219,15 +251,65 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // i_PsumFIFO_Data 
+always@(posedge s_clk) begin
+    r_PsumFIFO_Data <= i_PsumFIFO_Data;
 
+    o_PsumData      <= w_Psum_tmpdata ;
+
+    r_PsumFIFO_Valid <= o_PsumFIFO_Valid;
+    o_PsumValid      <= r_PsumFIFO_Valid;
+end
+
+// o_Psum_Finish
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        o_Psum_Finish <= 1'b0;
+    else if (w_BaseAddr_AddFlag && r_rd_baseaddr == 2 * `FINAL_FMAPS_WIDTH / `SYSTOLIC_UNIT_NUM - 2) // 6
+        o_Psum_Finish <= 1'b1;
+end
+
+// r_ROM_Cnt
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_ROM_Cnt <= 'd0;
+    else if (o_PsumFIFO_Valid && r_ROM_addra[3 : 0] == 4'hF)
+        r_ROM_Cnt <= r_ROM_Cnt + 1'b1;
+end
+
+// r_ROM_BaseAddra
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_ROM_BaseAddra <= 'd0;
+    else if (r_ROM_BaseAddra[8 : 4] == MAX_LOAD_ONELINE - 1 && r_ROM_Cnt == 4'hF && r_ROM_addra[3 : 0] == 4'b0111)
+        r_ROM_BaseAddra <= 'd0;
+    else if (r_ROM_Cnt == 4'hF && r_ROM_addra[3 : 0] == 4'b0111)
+        r_ROM_BaseAddra <= r_ROM_BaseAddra + 'd16;
+end
+
+// r_ROM_addra
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_ROM_addra <= 'd0;
+    else if (o_PsumFIFO_Valid && r_ROM_addra[3 : 0] == 4'hF)
+        r_ROM_addra <= r_ROM_BaseAddra;
+    else if (o_PsumFIFO_Valid)
+        r_ROM_addra <= r_ROM_addra + 1'b1;
+end
+
+linear_q_bias_rom u_linear_q_bias_rom (
+    .clka           ( s_clk              ),
+    .addra          ( r_ROM_addra        ),  // [8 : 0] addra
+    .douta          ( w_ROM_bias_out     )   // [15 : 0] douta
+);
 
 // --------------- Finite-State-Machine --------------- \\
 always@(*) begin
 
     case(s_curr_state)
-        S_IDLE:             s_next_state = i_ramout_ready ? S_LOAD_DATA : S_IDLE;
+        S_IDLE:             s_next_state = i_ramout_ready ? (o_Psum_Finish ? S_DONE : S_LOAD_DATA) : S_IDLE;
         S_LOAD_DATA:        s_next_state = (r_LoadFullLine_cnt == MAX_LOAD_ONELINE - 1 && r_Rd_data_done_pre0) ? S_FETCH_DATA : S_LOAD_DATA;
         S_FETCH_DATA:       s_next_state = (r_PsumFIFO_cnt == `SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM - 1) ? S_IDLE : S_FETCH_DATA;
+        S_DONE:             s_next_state = S_DONE;
         default:            s_next_state = S_IDLE;
     endcase
 
