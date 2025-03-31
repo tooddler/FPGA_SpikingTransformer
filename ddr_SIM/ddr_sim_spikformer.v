@@ -28,7 +28,9 @@ module ddr_sim_spikformer (
 reg [`DATA_WIDTH - 1 : 0] mem [`MEM_LENGTH - 1 : 0];
 
 // -----> initial part <----- \\
-parameter weight_data_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/linear_q_weight.bin";
+parameter q_weight_data_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/linear_q_weight.bin";
+parameter k_weight_data_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/linear_k_weight.bin";
+parameter v_weight_data_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/linear_v_weight.bin";
 
 integer file, o, addr;
 reg [`ADDR_SIZE-1 : 0]  first_addr          ;
@@ -36,7 +38,7 @@ reg [7:0]               byte_data [7:0]     ;
 
 initial begin
     // load weight
-    file = $fopen(weight_data_path, "rb");
+    file = $fopen(q_weight_data_path, "rb");
     addr = 0;
     first_addr = `WEIGHTS_Q_BASEADDR / 8;
     while (!$feof(file)) begin
@@ -45,7 +47,31 @@ initial begin
         addr = addr + 1;
     end
     addr = addr - 1;
-    $display("read weight num: %d", addr<<3);
+    $display("read Q weight num: %d", addr<<3);
+    $fclose(file);
+
+    file = $fopen(k_weight_data_path, "rb");
+    addr = 0;
+    first_addr = `WEIGHTS_K_BASEADDR / 8;
+    while (!$feof(file)) begin
+        o = $fread(byte_data, file);
+        mem[first_addr + addr] = {byte_data[7], byte_data[6], byte_data[5], byte_data[4], byte_data[3], byte_data[2], byte_data[1], byte_data[0]};
+        addr = addr + 1;
+    end
+    addr = addr - 1;
+    $display("read K weight num: %d", addr<<3);
+    $fclose(file);
+
+    file = $fopen(v_weight_data_path, "rb");    
+    addr = 0;
+    first_addr = `WEIGHTS_V_BASEADDR / 8;
+    while (!$feof(file)) begin
+        o = $fread(byte_data, file);
+        mem[first_addr + addr] = {byte_data[7], byte_data[6], byte_data[5], byte_data[4], byte_data[3], byte_data[2], byte_data[1], byte_data[0]};
+        addr = addr + 1;
+    end
+    addr = addr - 1;
+    $display("read V weight num: %d", addr<<3);
     $fclose(file);
 end
 
