@@ -3,6 +3,7 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : Spikformer Encoder Block testbench
+    sim-time: 2600 us + 
 */
 
 `include "hyper_para.v"
@@ -108,6 +109,13 @@ wire [`LEN_WIDTH - 1 : 0]               burst_read_len          ;
 wire                                    burst_read_req          ;
 wire                                    burst_read_valid        ;
 wire                                    burst_read_finish       ;
+
+wire [`TIME_STEPS - 1 : 0]              w_lq_spikes_out         ;
+wire                                    w_lq_spikes_valid       ;
+wire [`TIME_STEPS - 1 : 0]              w_lk_spikes_out         ;
+wire                                    w_lk_spikes_valid       ;
+wire [`TIME_STEPS - 1 : 0]              w_lv_spikes_out         ;
+wire                                    w_lv_spikes_valid       ;
 
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
@@ -454,6 +462,43 @@ SystolicArray u_SystolicArray_V(
     .o_PsumFIFO_Data      ( w_lv_PsumFIFO_Data      )
 );
 
+// --------------- Lif Group --------------- \\ 
+LIF_group u_LIF_group_Q(
+    .s_clk                ( s_clk                   ),
+    .s_rst                ( s_rst                   ),
+
+    .i_lif_thrd           ( 'd128                   ),
+    .i_PsumValid          ( w_lq_PsumValid          ),
+    .i_PsumData           ( w_lq_PsumData           ),
+
+    .o_spikes_out         ( w_lq_spikes_out         ),
+    .o_spikes_valid       ( w_lq_spikes_valid       )
+);
+
+LIF_group u_LIF_group_K(
+    .s_clk                ( s_clk                   ),
+    .s_rst                ( s_rst                   ),
+
+    .i_lif_thrd           ( 'd128                   ),
+    .i_PsumValid          ( w_lk_PsumValid          ),
+    .i_PsumData           ( w_lk_PsumData           ),
+
+    .o_spikes_out         ( w_lk_spikes_out         ),
+    .o_spikes_valid       ( w_lk_spikes_valid       )
+);
+
+LIF_group u_LIF_group_V(
+    .s_clk                ( s_clk                   ),
+    .s_rst                ( s_rst                   ),
+
+    .i_lif_thrd           ( 'd128                   ),
+    .i_PsumValid          ( w_lv_PsumValid          ),
+    .i_PsumData           ( w_lv_PsumData           ),
+
+    .o_spikes_out         ( w_lv_spikes_out         ),
+    .o_spikes_valid       ( w_lv_spikes_valid       )
+);
+
 // GET DATA ----------------------------------------------------------------------------------------------------------------
 parameter linear_q_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_linear_q_out_t0.txt";
 parameter linear_q_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_linear_q_out_t1.txt";
@@ -551,6 +596,100 @@ always@(posedge s_clk) begin
         $fwrite(vfile1, "%d\n", $signed(w_lv_PsumData[2*20 - 1 : 1*20])); 
         $fwrite(vfile2, "%d\n", $signed(w_lv_PsumData[3*20 - 1 : 2*20])); 
         $fwrite(vfile3, "%d\n", $signed(w_lv_PsumData[4*20 - 1 : 3*20])); 
+    end
+end
+
+// ======= SPIKES GET =======
+parameter attn_lif_q_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_q_out_t0.txt";
+parameter attn_lif_q_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_q_out_t1.txt";
+parameter attn_lif_q_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_q_out_t2.txt";
+parameter attn_lif_q_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_q_out_t3.txt";
+reg [15 : 0]       r_lif_q_cnt=0 ; 
+
+integer lq_file0, lq_file1, lq_file2, lq_file3;
+initial begin
+    lq_file0 = $fopen(attn_lif_q_out_t0_path, "w");
+    lq_file1 = $fopen(attn_lif_q_out_t1_path, "w");
+    lq_file2 = $fopen(attn_lif_q_out_t2_path, "w");
+    lq_file3 = $fopen(attn_lif_q_out_t3_path, "w");
+end
+  
+always@(posedge s_clk) begin
+    if (r_lif_q_cnt == 'd24576) begin
+        $display("lif_q_out cal done");
+        $fclose(lq_file0);
+        $fclose(lq_file1);
+        $fclose(lq_file2);
+        $fclose(lq_file3);
+    end
+    else if (w_lq_spikes_valid) begin
+        r_lif_q_cnt <= r_lif_q_cnt + 1'b1;
+        $fwrite(lq_file0, "%b\n", w_lq_spikes_out[0]); 
+        $fwrite(lq_file1, "%b\n", w_lq_spikes_out[1]); 
+        $fwrite(lq_file2, "%b\n", w_lq_spikes_out[2]); 
+        $fwrite(lq_file3, "%b\n", w_lq_spikes_out[3]); 
+    end
+end
+
+parameter attn_lif_k_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_k_out_t0.txt";
+parameter attn_lif_k_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_k_out_t1.txt";
+parameter attn_lif_k_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_k_out_t2.txt";
+parameter attn_lif_k_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_k_out_t3.txt";
+reg [15 : 0]       r_lif_k_cnt=0 ; 
+
+integer lk_file0, lk_file1, lk_file2, lk_file3;
+initial begin
+    lk_file0 = $fopen(attn_lif_k_out_t0_path, "w");
+    lk_file1 = $fopen(attn_lif_k_out_t1_path, "w");
+    lk_file2 = $fopen(attn_lif_k_out_t2_path, "w");
+    lk_file3 = $fopen(attn_lif_k_out_t3_path, "w");
+end
+  
+always@(posedge s_clk) begin
+    if (r_lif_k_cnt == 'd24576) begin
+        $display("lif_k_out cal done");
+        $fclose(lk_file0);
+        $fclose(lk_file1);
+        $fclose(lk_file2);
+        $fclose(lk_file3);
+    end
+    else if (w_lk_spikes_valid) begin
+        r_lif_k_cnt <= r_lif_k_cnt + 1'b1;
+        $fwrite(lk_file0, "%b\n", w_lk_spikes_out[0]); 
+        $fwrite(lk_file1, "%b\n", w_lk_spikes_out[1]); 
+        $fwrite(lk_file2, "%b\n", w_lk_spikes_out[2]); 
+        $fwrite(lk_file3, "%b\n", w_lk_spikes_out[3]); 
+    end
+end
+
+parameter attn_lif_v_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_v_out_t0.txt";
+parameter attn_lif_v_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_v_out_t1.txt";
+parameter attn_lif_v_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_v_out_t2.txt";
+parameter attn_lif_v_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_lif_v_out_t3.txt";
+reg [15 : 0]       r_lif_v_cnt=0 ; 
+
+integer lv_file0, lv_file1, lv_file2, lv_file3;
+initial begin
+    lv_file0 = $fopen(attn_lif_v_out_t0_path, "w");
+    lv_file1 = $fopen(attn_lif_v_out_t1_path, "w");
+    lv_file2 = $fopen(attn_lif_v_out_t2_path, "w");
+    lv_file3 = $fopen(attn_lif_v_out_t3_path, "w");
+end
+  
+always@(posedge s_clk) begin
+    if (r_lif_v_cnt == 'd24576) begin
+        $display("lif_k_out cal done");
+        $fclose(lv_file0);
+        $fclose(lv_file1);
+        $fclose(lv_file2);
+        $fclose(lv_file3);
+    end
+    else if (w_lv_spikes_valid) begin
+        r_lif_v_cnt <= r_lif_v_cnt + 1'b1;
+        $fwrite(lv_file0, "%b\n", w_lv_spikes_out[0]); 
+        $fwrite(lv_file1, "%b\n", w_lv_spikes_out[1]); 
+        $fwrite(lv_file2, "%b\n", w_lv_spikes_out[2]); 
+        $fwrite(lv_file3, "%b\n", w_lv_spikes_out[3]); 
     end
 end
 
