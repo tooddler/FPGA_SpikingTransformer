@@ -9,113 +9,120 @@
 `include "hyper_para.v"
 module SpikformerEncoderBlock_tb ();
 
-reg                                     s_clk                   ;
-reg                                     s_rst                   ;
+reg                                                  s_clk                   ;
+reg                                                  s_rst                   ;
 
-wire [11 : 0]                           w_rd_addr               ;
-wire [`PATCH_EMBED_WIDTH * 2 - 1 : 0]   w_ramout_data           ;
-wire                                    w_ramout_ready          ;
+wire [11 : 0]                                        w_rd_addr               ;
+wire [`PATCH_EMBED_WIDTH * 2 - 1 : 0]                w_ramout_data           ;
+wire                                                 w_ramout_ready          ;
 
-wire     [`DATA_WIDTH - 1 : 0]          w_lq_weight_out         ;
-wire                                    w_lq_weight_valid       ;
-wire                                    w_lq_weight_ready       ;
-wire                                    lq_load_w_finish        ;
+wire     [`DATA_WIDTH - 1 : 0]                       w_lq_weight_out         ;
+wire                                                 w_lq_weight_valid       ;
+wire                                                 w_lq_weight_ready       ;
+wire                                                 lq_load_w_finish        ;
 
-wire     [`DATA_WIDTH - 1 : 0]          w_lk_weight_out         ;
-wire                                    w_lk_weight_valid       ;
-wire                                    w_lk_weight_ready       ;
-wire                                    lk_load_w_finish        ;
+wire     [`DATA_WIDTH - 1 : 0]                       w_lk_weight_out         ;
+wire                                                 w_lk_weight_valid       ;
+wire                                                 w_lk_weight_ready       ;
+wire                                                 lk_load_w_finish        ;
 
-wire     [`DATA_WIDTH - 1 : 0]          w_lv_weight_out         ;
-wire                                    w_lv_weight_valid       ;
-wire                                    w_lv_weight_ready       ;
-wire                                    lv_load_w_finish        ;
+wire     [`DATA_WIDTH - 1 : 0]                       w_lv_weight_out         ;
+wire                                                 w_lv_weight_valid       ;
+wire                                                 w_lv_weight_ready       ;
+wire                                                 lv_load_w_finish        ;
 
-wire                                    m00_MtrxA_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             m00_MtrxA_slice_data    ;
-wire                                    m00_MtrxA_slice_done    ;
-wire                                    m00_MtrxA_slice_ready   ;
-wire                                    m00_MtrxB_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             m00_MtrxB_slice_data    ;
-wire                                    m00_MtrxB_slice_done    ;
-wire                                    m00_MtrxB_slice_ready   ;
+wire                                                 m00_MtrxA_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          m00_MtrxA_slice_data    ;
+wire                                                 m00_MtrxA_slice_done    ;
+wire                                                 m00_MtrxA_slice_ready   ;
+wire                                                 m00_MtrxB_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          m00_MtrxB_slice_data    ;
+wire                                                 m00_MtrxB_slice_done    ;
+wire                                                 m00_MtrxB_slice_ready   ;
 
-wire                                    s00_MtrxA_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             s00_MtrxA_slice_data    ;
-wire                                    s00_MtrxA_slice_done    ;
-wire                                    s00_MtrxA_slice_ready   ;
-wire                                    s00_MtrxB_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             s00_MtrxB_slice_data    ;
-wire                                    s00_MtrxB_slice_done    ;
-wire                                    s00_MtrxB_slice_ready   ;
+wire                                                 s00_MtrxA_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          s00_MtrxA_slice_data    ;
+wire                                                 s00_MtrxA_slice_done    ;
+wire                                                 s00_MtrxA_slice_ready   ;
+wire                                                 s00_MtrxB_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          s00_MtrxB_slice_data    ;
+wire                                                 s00_MtrxB_slice_done    ;
+wire                                                 s00_MtrxB_slice_ready   ;
 
-wire                                    s01_MtrxA_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             s01_MtrxA_slice_data    ;
-wire                                    s01_MtrxA_slice_done    ;
-wire                                    s01_MtrxA_slice_ready   ;
-wire                                    s01_MtrxB_slice_valid   ;
-wire  [`DATA_WIDTH - 1 : 0]             s01_MtrxB_slice_data    ;
-wire                                    s01_MtrxB_slice_done    ;
-wire                                    s01_MtrxB_slice_ready   ;
+wire                                                 s01_MtrxA_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          s01_MtrxA_slice_data    ;
+wire                                                 s01_MtrxA_slice_done    ;
+wire                                                 s01_MtrxA_slice_ready   ;
+wire                                                 s01_MtrxB_slice_valid   ;
+wire  [`DATA_WIDTH - 1 : 0]                          s01_MtrxB_slice_data    ;
+wire                                                 s01_MtrxB_slice_done    ;
+wire                                                 s01_MtrxB_slice_ready   ;
 
-wire                                    w_lq_Init_PrepareData   ;
-wire                                    w_lq_Finish_Calc        ;
-wire                                    w_lk_Init_PrepareData   ;
-wire                                    w_lk_Finish_Calc        ;
-wire                                    w_lv_Init_PrepareData   ;
-wire                                    w_lv_Finish_Calc        ;
+wire                                                 w_lq_Init_PrepareData   ;
+wire                                                 w_lq_Finish_Calc        ;
+wire                                                 w_lk_Init_PrepareData   ;
+wire                                                 w_lk_Finish_Calc        ;
+wire                                                 w_lv_Init_PrepareData   ;
+wire                                                 w_lv_Finish_Calc        ;
 
-wire [`SYSTOLIC_UNIT_NUM - 1 : 0]       w_lq_PsumFIFO_Grant     ;
-wire                                    w_lq_PsumFIFO_Valid     ;
-wire                                    w_lq_PsumFIFO_Finish    ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lq_PsumFIFO_Data      ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lq_PsumData           ;
-wire                                    w_lq_PsumValid          ;
-wire [`SYSTOLIC_UNIT_NUM - 1 : 0]       w_lk_PsumFIFO_Grant     ;
-wire                                    w_lk_PsumFIFO_Valid     ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lk_PsumFIFO_Data      ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lk_PsumData           ;
-wire                                    w_lk_PsumValid          ;
-wire [`SYSTOLIC_UNIT_NUM - 1 : 0]       w_lv_PsumFIFO_Grant     ;
-wire                                    w_lv_PsumFIFO_Valid     ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lv_PsumFIFO_Data      ;
-wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]     w_lv_PsumData           ;
-wire                                    w_lv_PsumValid          ;
+wire [`SYSTOLIC_UNIT_NUM - 1 : 0]                    w_lq_PsumFIFO_Grant     ;
+wire                                                 w_lq_PsumFIFO_Valid     ;
+wire                                                 w_lq_PsumFIFO_Finish    ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lq_PsumFIFO_Data      ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lq_PsumData           ;
+wire                                                 w_lq_PsumValid          ;
+wire [`SYSTOLIC_UNIT_NUM - 1 : 0]                    w_lk_PsumFIFO_Grant     ;
+wire                                                 w_lk_PsumFIFO_Valid     ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lk_PsumFIFO_Data      ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lk_PsumData           ;
+wire                                                 w_lk_PsumValid          ;
+wire [`SYSTOLIC_UNIT_NUM - 1 : 0]                    w_lv_PsumFIFO_Grant     ;
+wire                                                 w_lv_PsumFIFO_Valid     ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lv_PsumFIFO_Data      ;
+wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lv_PsumData           ;
+wire                                                 w_lv_PsumValid          ;
 
-wire [`DATA_WIDTH- 1 : 0]               M_lq_rd_burst_data      ;
-wire [`ADDR_SIZE - 1 : 0]               M_lq_rd_burst_addr      ;
-wire [`LEN_WIDTH - 1 : 0]               M_lq_rd_burst_len       ;
-wire                                    M_lq_rd_burst_req       ;
-wire                                    M_lq_rd_burst_valid     ;
-wire                                    M_lq_rd_burst_finish    ;
+wire [`DATA_WIDTH- 1 : 0]                            M_lq_rd_burst_data      ;
+wire [`ADDR_SIZE - 1 : 0]                            M_lq_rd_burst_addr      ;
+wire [`LEN_WIDTH - 1 : 0]                            M_lq_rd_burst_len       ;
+wire                                                 M_lq_rd_burst_req       ;
+wire                                                 M_lq_rd_burst_valid     ;
+wire                                                 M_lq_rd_burst_finish    ;
 
-wire [`DATA_WIDTH- 1 : 0]               M_lk_rd_burst_data      ;
-wire [`ADDR_SIZE - 1 : 0]               M_lk_rd_burst_addr      ;
-wire [`LEN_WIDTH - 1 : 0]               M_lk_rd_burst_len       ;
-wire                                    M_lk_rd_burst_req       ;
-wire                                    M_lk_rd_burst_valid     ;
-wire                                    M_lk_rd_burst_finish    ;
+wire [`DATA_WIDTH- 1 : 0]                            M_lk_rd_burst_data      ;
+wire [`ADDR_SIZE - 1 : 0]                            M_lk_rd_burst_addr      ;
+wire [`LEN_WIDTH - 1 : 0]                            M_lk_rd_burst_len       ;
+wire                                                 M_lk_rd_burst_req       ;
+wire                                                 M_lk_rd_burst_valid     ;
+wire                                                 M_lk_rd_burst_finish    ;
 
-wire [`DATA_WIDTH- 1 : 0]               M_lv_rd_burst_data      ;
-wire [`ADDR_SIZE - 1 : 0]               M_lv_rd_burst_addr      ;
-wire [`LEN_WIDTH - 1 : 0]               M_lv_rd_burst_len       ;
-wire                                    M_lv_rd_burst_req       ;
-wire                                    M_lv_rd_burst_valid     ;
-wire                                    M_lv_rd_burst_finish    ;
+wire [`DATA_WIDTH- 1 : 0]                            M_lv_rd_burst_data      ;
+wire [`ADDR_SIZE - 1 : 0]                            M_lv_rd_burst_addr      ;
+wire [`LEN_WIDTH - 1 : 0]                            M_lv_rd_burst_len       ;
+wire                                                 M_lv_rd_burst_req       ;
+wire                                                 M_lv_rd_burst_valid     ;
+wire                                                 M_lv_rd_burst_finish    ;
 
-wire [`DATA_WIDTH- 1 : 0]               burst_read_data         ;
-wire [`ADDR_SIZE - 1 : 0]               burst_read_addr         ;
-wire [`LEN_WIDTH - 1 : 0]               burst_read_len          ;
-wire                                    burst_read_req          ;
-wire                                    burst_read_valid        ;
-wire                                    burst_read_finish       ;
+wire [`DATA_WIDTH- 1 : 0]                            burst_read_data         ;
+wire [`ADDR_SIZE - 1 : 0]                            burst_read_addr         ;
+wire [`LEN_WIDTH - 1 : 0]                            burst_read_len          ;
+wire                                                 burst_read_req          ;
+wire                                                 burst_read_valid        ;
+wire                                                 burst_read_finish       ;
 
-wire [`TIME_STEPS - 1 : 0]              w_lq_spikes_out         ;
-wire                                    w_lq_spikes_valid       ;
-wire [`TIME_STEPS - 1 : 0]              w_lk_spikes_out         ;
-wire                                    w_lk_spikes_valid       ;
-wire [`TIME_STEPS - 1 : 0]              w_lv_spikes_out         ;
-wire                                    w_lv_spikes_valid       ;
+wire [`TIME_STEPS - 1 : 0]                           w_lq_spikes_out         ;
+wire                                                 w_lq_spikes_valid       ;
+wire [`TIME_STEPS - 1 : 0]                           w_lk_spikes_out         ;
+wire                                                 w_lk_spikes_valid       ;
+wire [`TIME_STEPS - 1 : 0]                           w_lv_spikes_out         ;
+wire                                                 w_lv_spikes_valid       ;
+
+wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      w_lq_spikesLine_out     ;
+wire                                                 w_lq_spikesLine_valid   ;
+wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      w_lk_spikesLine_out     ;
+wire                                                 w_lk_spikesLine_valid   ;
+wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      w_lv_spikesLine_out     ;
+wire                                                 w_lv_spikesLine_valid   ;
 
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
@@ -499,6 +506,24 @@ LIF_group u_LIF_group_V(
     .o_spikes_valid       ( w_lv_spikes_valid       )
 );
 
+qkv_Reshape u_qkv_Reshape(
+    .s_clk                 ( s_clk                 ),
+    .s_rst                 ( s_rst                 ),
+    .i00_spikes_out        ( w_lq_spikes_out       ),
+    .i00_spikes_valid      ( w_lq_spikes_valid     ),
+    .i01_spikes_out        ( w_lk_spikes_out       ),
+    .i01_spikes_valid      ( w_lk_spikes_valid     ),
+    .i02_spikes_out        ( w_lv_spikes_out       ),
+    .i02_spikes_valid      ( w_lv_spikes_valid     ),
+
+    .o00_spikesLine_out    ( w_lq_spikesLine_out   ),
+    .o00_spikesLine_valid  ( w_lq_spikesLine_valid ),
+    .o01_spikesLine_out    ( w_lk_spikesLine_out   ),
+    .o01_spikesLine_valid  ( w_lk_spikesLine_valid ),
+    .o02_spikesLine_out    ( w_lv_spikesLine_out   ),
+    .o02_spikesLine_valid  ( w_lv_spikesLine_valid )
+);
+
 // GET DATA ----------------------------------------------------------------------------------------------------------------
 parameter linear_q_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_linear_q_out_t0.txt";
 parameter linear_q_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/attn_linear_q_out_t1.txt";
@@ -690,6 +715,57 @@ always@(posedge s_clk) begin
         $fwrite(lv_file1, "%b\n", w_lv_spikes_out[1]); 
         $fwrite(lv_file2, "%b\n", w_lv_spikes_out[2]); 
         $fwrite(lv_file3, "%b\n", w_lv_spikes_out[3]); 
+    end
+end
+
+// ======= CHECK ALIGN-DATA =======
+parameter align_lif_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t0.txt";
+parameter align_lif_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t1.txt";
+parameter align_lif_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t2.txt";
+parameter align_lif_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t3.txt";
+
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t0 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t1 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t2 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t3 ;
+
+reg [15 : 0]       r_align_lif_v_cnt=0 ; 
+
+genvar m;
+generate
+    for (m = 0; m < `SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2; m = m + 1) begin
+        assign w_alignSpikes_t0[m] = w_lq_spikesLine_out[`TIME_STEPS * m + 0]; 
+        assign w_alignSpikes_t1[m] = w_lq_spikesLine_out[`TIME_STEPS * m + 1];
+        assign w_alignSpikes_t2[m] = w_lq_spikesLine_out[`TIME_STEPS * m + 2];
+        assign w_alignSpikes_t3[m] = w_lq_spikesLine_out[`TIME_STEPS * m + 3];
+    end
+endgenerate
+
+integer align_file0, align_file1, align_file2, align_file3;
+initial begin
+    align_file0 = $fopen(align_lif_out_t0_path, "w");
+    align_file1 = $fopen(align_lif_out_t1_path, "w");
+    align_file2 = $fopen(align_lif_out_t2_path, "w");
+    align_file3 = $fopen(align_lif_out_t3_path, "w");
+end
+
+integer mm;
+always@(posedge s_clk) begin
+    if (r_align_lif_v_cnt == 'd768) begin
+        $display("align lif cal done");
+        $fclose(align_file0);
+        $fclose(align_file1);
+        $fclose(align_file2);
+        $fclose(align_file3);
+    end
+    else if (w_lq_spikesLine_valid) begin
+        r_align_lif_v_cnt <= r_align_lif_v_cnt + 1'b1;
+        for (mm = 0; mm < `SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2; mm = mm + 1) begin
+            $fwrite(align_file0, "%b\n", w_alignSpikes_t0[mm]); 
+            $fwrite(align_file1, "%b\n", w_alignSpikes_t1[mm]); 
+            $fwrite(align_file2, "%b\n", w_alignSpikes_t2[mm]); 
+            $fwrite(align_file3, "%b\n", w_alignSpikes_t3[mm]); 
+        end
     end
 end
 
