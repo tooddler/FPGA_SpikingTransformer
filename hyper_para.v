@@ -70,3 +70,4 @@
 `define     WEIGHTS_V_BASEADDR          32'h2006_0000    // end -> 32'h2007_4000
 `define     FINAL_FMAPS_CHNNLS          384
 `define     FINAL_FMAPS_WIDTH           64
+`define     MULTI_HEAD_NUMS             12

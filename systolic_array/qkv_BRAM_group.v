@@ -6,7 +6,7 @@
 */
 
 `include "../hyper_para.v"
-module akv_BRAM_group (
+module qkv_BRAM_group (
     input                                                       s_clk                ,
     input                                                       s_rst                ,
     // - intercat with qkv linear module -
@@ -20,8 +20,8 @@ module akv_BRAM_group (
     output wire                                                 o_SpikesTmpRam_Ready ,
     input       [9 : 0]                                         i_QueryRam_rdaddr    ,
     output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_QueryRam_out       ,
-    input       [9 : 0]                                         i_KayRam_rdaddr      ,
-    output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_KayRam_out         ,
+    input       [9 : 0]                                         i_KeyRam_rdaddr      ,
+    output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_KeyRam_out         ,
     input       [9 : 0]                                         i_ValueRam_rdaddr    ,
     output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_ValueRam_out       
 );
@@ -83,8 +83,8 @@ qkv_SpikesTmpRam Key_SpikesTmpRam (
     .dina   ( i01_spikesLine_in     ), // [127 : 0] dina
      
     .clkb   ( s_clk                 ), 
-    .addrb  ( i_KayRam_rdaddr       ), // [9 : 0] addrb
-    .doutb  ( o_KayRam_out          )  // [127 : 0] douta
+    .addrb  ( i_KeyRam_rdaddr       ), // [9 : 0] addrb
+    .doutb  ( o_KeyRam_out          )  // [127 : 0] douta
 );
 
 qkv_SpikesTmpRam Value_SpikesTmpRam (
