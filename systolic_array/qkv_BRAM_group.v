@@ -1,8 +1,9 @@
 /*
     --- QKV MATRIX Store BRAM --- 
-    Author  : Toddler. 
-    Email   : 23011211185@stu.xidian.edu.cn
-    Encoder : UTF-8
+    Author   : Toddler. 
+    Email    : 23011211185@stu.xidian.edu.cn
+    Encoder  : UTF-8
+    BRAM-USE : 36 K BRAM * 4 * 3 
 */
 
 `include "../hyper_para.v"
@@ -19,7 +20,7 @@ module qkv_BRAM_group (
     // - Read Port -
     output wire                                                 o_SpikesTmpRam_Ready ,
     input       [9 : 0]                                         i_QueryRam_rdaddr    ,
-    output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_QueryRam_out       ,
+    output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_QueryRam_out       , // 32 * t=4
     input       [9 : 0]                                         i_KeyRam_rdaddr      ,
     output wire [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]      o_KeyRam_out         ,
     input       [9 : 0]                                         i_ValueRam_rdaddr    ,
