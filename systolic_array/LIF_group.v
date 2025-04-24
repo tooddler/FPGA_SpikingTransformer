@@ -6,16 +6,18 @@
 */
 
 `include "../hyper_para.v"
-module LIF_group (
-    input                                                  s_clk               ,
-    input                                                  s_rst               ,
+module LIF_group #(
+    PSUM_WIDTH = `SYSTOLIC_PSUM_WIDTH
+)(
+    input                                        s_clk               ,
+    input                                        s_rst               ,
 
-    input        [`SYSTOLIC_PSUM_WIDTH / 4 - 1 : 0]        i_lif_thrd          ,
-    input                                                  i_PsumValid         ,
-    input        [`SYSTOLIC_PSUM_WIDTH - 1 : 0]            i_PsumData          ,
+    input        [PSUM_WIDTH / 4 - 1 : 0]        i_lif_thrd          ,
+    input                                        i_PsumValid         ,
+    input        [PSUM_WIDTH - 1 : 0]            i_PsumData          ,
 
-    output wire  [`TIME_STEPS - 1 : 0]                     o_spikes_out        ,
-    output wire                                            o_spikes_valid      
+    output wire  [`TIME_STEPS - 1 : 0]           o_spikes_out        ,
+    output wire                                  o_spikes_valid      
 );
 
 wire                                          w_spike_t0            ;
@@ -28,15 +30,15 @@ wire                                          w_spike_valid_t1      ;
 wire                                          w_spike_valid_t2      ;            
 wire                                          w_spike_valid_t3      ;
 
-wire  [`SYSTOLIC_PSUM_WIDTH / 4 - 1 : 0]      w_nxt_mem_t0          ;
-wire  [`SYSTOLIC_PSUM_WIDTH / 4 - 1 : 0]      w_nxt_mem_t1          ;            
-wire  [`SYSTOLIC_PSUM_WIDTH / 4 - 1 : 0]      w_nxt_mem_t2          ;            
-wire  [`SYSTOLIC_PSUM_WIDTH / 4 - 1 : 0]      w_nxt_mem_t3          ;
+wire  [PSUM_WIDTH / 4 - 1 : 0]                w_nxt_mem_t0          ;
+wire  [PSUM_WIDTH / 4 - 1 : 0]                w_nxt_mem_t1          ;            
+wire  [PSUM_WIDTH / 4 - 1 : 0]                w_nxt_mem_t2          ;            
+wire  [PSUM_WIDTH / 4 - 1 : 0]                w_nxt_mem_t3          ;
 
-reg [`SYSTOLIC_PSUM_WIDTH - 1 : 0]            r_PsumData_d0=0       ;   
-reg [`SYSTOLIC_PSUM_WIDTH - 1 : 0]            r_PsumData_d1=0       ;   
-reg [`SYSTOLIC_PSUM_WIDTH - 1 : 0]            r_PsumData_d2=0       ;   
-reg [`SYSTOLIC_PSUM_WIDTH - 1 : 0]            r_PsumData_d3=0       ;   
+reg [PSUM_WIDTH - 1 : 0]                      r_PsumData_d0=0       ;   
+reg [PSUM_WIDTH - 1 : 0]                      r_PsumData_d1=0       ;   
+reg [PSUM_WIDTH - 1 : 0]                      r_PsumData_d2=0       ;   
+reg [PSUM_WIDTH - 1 : 0]                      r_PsumData_d3=0       ;   
 
 reg                                           r_PsumValid_d0=0      ;
 reg                                           r_PsumValid_d1=0      ;
@@ -75,29 +77,29 @@ always@(posedge s_clk) begin
 end
 
 proj_lif #(
-    .ADD9_ALL_BITS      ( `SYSTOLIC_PSUM_WIDTH / 4                        )
+    .ADD9_ALL_BITS      ( PSUM_WIDTH / 4                         )
 ) u_proj_lif_t0 (
-    .s_clk              ( s_clk                                           ),
-    .s_rst              ( s_rst                                           ),
+    .s_clk              ( s_clk                                  ),
+    .s_rst              ( s_rst                                  ),
  
-    .THRESHOLD          ( i_lif_thrd                                      ),
-    .i_delta_mem        ( r_PsumData_d0[`SYSTOLIC_PSUM_WIDTH/4 - 1 : 0]   ),
-    .i_delta_mem_valid  ( r_PsumValid_d0                                  ),
-    .i_pre_mem          ( 'd0                                             ),
+    .THRESHOLD          ( i_lif_thrd                             ),
+    .i_delta_mem        ( r_PsumData_d0[PSUM_WIDTH/4 - 1 : 0]    ),
+    .i_delta_mem_valid  ( r_PsumValid_d0                         ),
+    .i_pre_mem          ( 'd0                                    ),
 
-    .o_spike            ( w_spike_t0                                      ),
-    .o_delta_mem_valid  ( w_spike_valid_t0                                ),
-    .o_nxt_mem          ( w_nxt_mem_t0                                    )
+    .o_spike            ( w_spike_t0                             ),
+    .o_delta_mem_valid  ( w_spike_valid_t0                       ),
+    .o_nxt_mem          ( w_nxt_mem_t0                           )
 );
 
 proj_lif #(
-    .ADD9_ALL_BITS      ( `SYSTOLIC_PSUM_WIDTH / 4                        )
+    .ADD9_ALL_BITS      ( PSUM_WIDTH / 4                                  )
 ) u_proj_lif_t1 (
     .s_clk              ( s_clk                                           ),
     .s_rst              ( s_rst                                           ),
     
     .THRESHOLD          ( i_lif_thrd                                      ),
-    .i_delta_mem        ( r_PsumData_d1[`SYSTOLIC_PSUM_WIDTH*2/4 - 1 : `SYSTOLIC_PSUM_WIDTH/4]),
+    .i_delta_mem        ( r_PsumData_d1[PSUM_WIDTH*2/4 - 1 : PSUM_WIDTH/4]),
     .i_delta_mem_valid  ( w_spike_valid_t0                                ),
     .i_pre_mem          ( w_nxt_mem_t0                                    ),
 
@@ -107,35 +109,35 @@ proj_lif #(
 );
 
 proj_lif #(
-    .ADD9_ALL_BITS      ( `SYSTOLIC_PSUM_WIDTH / 4                        )
+    .ADD9_ALL_BITS      ( PSUM_WIDTH / 4                                    )
 ) u_proj_lif_t2 (
-    .s_clk              ( s_clk                                           ),
-    .s_rst              ( s_rst                                           ),
+    .s_clk              ( s_clk                                             ),
+    .s_rst              ( s_rst                                             ),
 
-    .THRESHOLD          ( i_lif_thrd                                      ),
-    .i_delta_mem        ( r_PsumData_d2[`SYSTOLIC_PSUM_WIDTH*3/4 - 1 : `SYSTOLIC_PSUM_WIDTH*2/4]),
-    .i_delta_mem_valid  ( w_spike_valid_t1                                ),
-    .i_pre_mem          ( w_nxt_mem_t1                                    ),
+    .THRESHOLD          ( i_lif_thrd                                        ),
+    .i_delta_mem        ( r_PsumData_d2[PSUM_WIDTH*3/4 - 1 : PSUM_WIDTH*2/4]),
+    .i_delta_mem_valid  ( w_spike_valid_t1                                  ),
+    .i_pre_mem          ( w_nxt_mem_t1                                      ),
 
-    .o_spike            ( w_spike_t2                                      ),
-    .o_delta_mem_valid  ( w_spike_valid_t2                                ),
-    .o_nxt_mem          ( w_nxt_mem_t2                                    )
+    .o_spike            ( w_spike_t2                                        ),
+    .o_delta_mem_valid  ( w_spike_valid_t2                                  ),
+    .o_nxt_mem          ( w_nxt_mem_t2                                      )
 );
 
 proj_lif #(
-    .ADD9_ALL_BITS      ( `SYSTOLIC_PSUM_WIDTH / 4                        )
+    .ADD9_ALL_BITS      ( PSUM_WIDTH / 4                                    )
 ) u_proj_lif_t3 (
-    .s_clk              ( s_clk                                           ),
-    .s_rst              ( s_rst                                           ),
+    .s_clk              ( s_clk                                             ),
+    .s_rst              ( s_rst                                             ),
 
-    .THRESHOLD          ( i_lif_thrd                                      ),
-    .i_delta_mem        ( r_PsumData_d3[`SYSTOLIC_PSUM_WIDTH - 1 : `SYSTOLIC_PSUM_WIDTH*3/4]),
-    .i_delta_mem_valid  ( w_spike_valid_t2                                ),
-    .i_pre_mem          ( w_nxt_mem_t2                                    ),
+    .THRESHOLD          ( i_lif_thrd                                        ),
+    .i_delta_mem        ( r_PsumData_d3[PSUM_WIDTH - 1 : PSUM_WIDTH*3/4]    ),
+    .i_delta_mem_valid  ( w_spike_valid_t2                                  ),
+    .i_pre_mem          ( w_nxt_mem_t2                                      ),
 
-    .o_spike            ( w_spike_t3                                      ),
-    .o_delta_mem_valid  ( w_spike_valid_t3                                ),
-    .o_nxt_mem          ( w_nxt_mem_t3                                    )
+    .o_spike            ( w_spike_t3                                        ),
+    .o_delta_mem_valid  ( w_spike_valid_t3                                  ),
+    .o_nxt_mem          ( w_nxt_mem_t3                                      )
 );
 
 

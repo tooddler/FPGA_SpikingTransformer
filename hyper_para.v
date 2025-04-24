@@ -71,3 +71,4 @@
 `define     FINAL_FMAPS_CHNNLS          384
 `define     FINAL_FMAPS_WIDTH           64
 `define     MULTI_HEAD_NUMS             12
+`define     QK_SCALE                    8                // q @ k^T / scale 
