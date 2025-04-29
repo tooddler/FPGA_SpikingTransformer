@@ -3,7 +3,7 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : Spikformer ATTN Block testbench
-    sim-time: 
+    sim-time: 600 us
 */
 
 `include "hyper_para.v"
@@ -92,7 +92,6 @@ Tmp_AttnRAM_group u_Tmp_AttnRAM_group(
     .o_AttnRAM_data        ( w_AttnRAM_data        )
 );
 
-
 MM_Calculator u_MM_Calculator(
     .s_clk                 ( s_clk                 ),
     .s_rst                 ( s_rst                 ),
@@ -180,6 +179,60 @@ always@(posedge s_clk) begin
             $fwrite(attnVfile1, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][23:12]); 
             $fwrite(attnVfile2, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][35:24]); 
             $fwrite(attnVfile3, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][47:36]); 
+        end
+    end
+end
+
+parameter lif_attn_v_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/lif_CalcMulti_attnV_out_t0.txt";
+parameter lif_attn_v_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/lif_CalcMulti_attnV_out_t1.txt";
+parameter lif_attn_v_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/lif_CalcMulti_attnV_out_t2.txt";
+parameter lif_attn_v_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/lif_CalcMulti_attnV_out_t3.txt";
+
+integer lif_attnVfile0, 
+        lif_attnVfile1, 
+        lif_attnVfile2, 
+        lif_attnVfile3;
+
+integer lif_attnV_i;
+reg [15 : 0]        r_lif_CalcMulti_attnv_cnt=0 ;
+
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t0 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t1 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t2 ;
+wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t3 ;
+
+genvar m;
+generate
+    for (m = 0; m < `SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2; m = m + 1) begin
+        assign w_attnv_Spikes_t0[m] = w_spikes_out[`TIME_STEPS * m + 0]; 
+        assign w_attnv_Spikes_t1[m] = w_spikes_out[`TIME_STEPS * m + 1];
+        assign w_attnv_Spikes_t2[m] = w_spikes_out[`TIME_STEPS * m + 2];
+        assign w_attnv_Spikes_t3[m] = w_spikes_out[`TIME_STEPS * m + 3];
+    end
+endgenerate
+
+initial begin
+    lif_attnVfile0 = $fopen(lif_attn_v_out_t0_path, "w");
+    lif_attnVfile1 = $fopen(lif_attn_v_out_t1_path, "w");
+    lif_attnVfile2 = $fopen(lif_attn_v_out_t2_path, "w");
+    lif_attnVfile3 = $fopen(lif_attn_v_out_t3_path, "w");
+end
+
+always@(posedge s_clk) begin
+    if (r_lif_CalcMulti_attnv_cnt == 'd768) begin
+        $display("lif attn @ V cal done");
+        $fclose(lif_attnVfile0);
+        $fclose(lif_attnVfile1);
+        $fclose(lif_attnVfile2);
+        $fclose(lif_attnVfile3);
+    end
+    else if (w_spikes_valid) begin
+        r_lif_CalcMulti_attnv_cnt <= r_lif_CalcMulti_attnv_cnt + 1'b1;
+        for (lif_attnV_i = 0; lif_attnV_i < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; lif_attnV_i = lif_attnV_i + 1) begin
+            $fwrite(lif_attnVfile0, "%b\n", w_attnv_Spikes_t0[lif_attnV_i]); 
+            $fwrite(lif_attnVfile1, "%b\n", w_attnv_Spikes_t1[lif_attnV_i]); 
+            $fwrite(lif_attnVfile2, "%b\n", w_attnv_Spikes_t2[lif_attnV_i]); 
+            $fwrite(lif_attnVfile3, "%b\n", w_attnv_Spikes_t3[lif_attnV_i]); 
         end
     end
 end
