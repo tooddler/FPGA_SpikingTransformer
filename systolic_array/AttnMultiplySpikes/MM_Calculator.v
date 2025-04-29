@@ -43,11 +43,15 @@ reg  [9 : 0]                                                r_ValueRam_baseaddr 
 reg  [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]     r_AttnRAM_data       ;     
 reg  [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]             r_ValueRam_out       ;
 reg  [$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0]                   r_ValueRam_Cnt       ;
-reg                                                         r_Finish_once_pre0=0 ;
-reg                                                         r_Finish_once_pre1=0 ;
-reg                                                         r_Finish_once=0      ;
+reg                                                         r_FinishLine_pre0=0  ;
+reg                                                         r_FinishLine_pre1=0  ;
+reg                                                         r_FinishLine=0       ;
 reg                                                         r_rdfifo_valid       ;
-reg  [4 : 0]                                                r_rdfifo_Cnt         ;
+reg  [$clog2(`FINAL_FMAPS_WIDTH) - 1 : 0]                   r_rdfifo_Cnt         ;
+reg                                                         r_AttnRam_Done_d0    ;
+reg                                                         r_AttnRam_Done_d1    ;
+reg                                                         r_AttnRam_Done_d2    ;
+reg                                                         r_AttnRam_Done_d3    ;
 
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
@@ -61,15 +65,15 @@ end
 assign o_spikes_out   = w_spikes_out      ;
 assign o_spikes_valid = w_spikes_valid[0] ;
 
-// r_Finish_once_pre0
+// r_FinishLine_pre0
 always@(posedge s_clk) begin
-    r_Finish_once_pre1 <= r_Finish_once_pre0;
-    r_Finish_once      <= r_Finish_once_pre1;
+    r_FinishLine_pre1 <= r_FinishLine_pre0;
+    r_FinishLine      <= r_FinishLine_pre1;
 
     if (o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b111_111)
-        r_Finish_once_pre0 <= 1'b1;
+        r_FinishLine_pre0 <= 1'b1;
     else 
-        r_Finish_once_pre0 <= 1'b0;
+        r_FinishLine_pre0 <= 1'b0;
 end
 
 // r_read_data_valid
@@ -90,20 +94,24 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_InitAddr <= 'd0;
-    else if (r_read_data_valid && o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b111_111 && r_ValueRam_Cnt == 6'b11_0100)
+    else if (r_read_data_valid && o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b11_0100 && r_ValueRam_Cnt == 6'b11_1111)
         r_InitAddr <= r_InitAddr + 'd16;
+end
+
+// r_rdfifo_Cnt
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst) 
+        r_rdfifo_Cnt <= 'd0 ;
+    else if (r_rdfifo_valid) 
+        r_rdfifo_Cnt <= r_rdfifo_Cnt + 1'b1;
 end
 
 // r_rdfifo_valid
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || r_rdfifo_Cnt == 'd31) begin
+    if (s_rst || r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1) 
         r_rdfifo_valid <= 1'b0;
-        r_rdfifo_Cnt   <= 'd0 ;
-    end
-    else if (s_curr_state == S_FETCH_DATA) begin
+    else if (s_curr_state == S_FETCH_DATA && r_AttnRam_Done_d3) 
         r_rdfifo_valid <= 1'b1;
-        r_rdfifo_Cnt   <= r_rdfifo_Cnt + 1'b1;
-    end
 end
 
 // --------------- READ AttnRAM DATA --------------- \\ 
@@ -117,6 +125,11 @@ end
 
 // o_AttnRam_Done
 always@(posedge s_clk) begin
+    r_AttnRam_Done_d0 <= o_AttnRam_Done   ;
+    r_AttnRam_Done_d1 <= r_AttnRam_Done_d0;
+    r_AttnRam_Done_d2 <= r_AttnRam_Done_d1;
+    r_AttnRam_Done_d3 <= r_AttnRam_Done_d2;
+
     if (o_AttnRam_rd_addr == `FINAL_FMAPS_WIDTH * `FINAL_FMAPS_WIDTH - 2) // 4096 - 2
         o_AttnRam_Done <= 1'b1;
     else 
@@ -138,7 +151,7 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_ValueRam_baseaddr <= 'd0;
-    else if (r_read_data_valid && o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b111_111 && r_ValueRam_Cnt == 6'b11_0111)
+    else if (r_read_data_valid && o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b11_0111 && r_ValueRam_Cnt == 6'b11_1111)
         r_ValueRam_baseaddr <= r_InitAddr;
     else if (r_read_data_valid && o_AttnRam_rd_addr[$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0] == 6'b111_111 && r_ValueRam_Cnt[3 : 0] == 4'b0111)
         r_ValueRam_baseaddr <= r_ValueRam_baseaddr + `MULTI_HEAD_NUMS*`SYSTOLIC_UNIT_NUM;
@@ -160,8 +173,8 @@ generate
             .s_clk                 ( s_clk                                                       ),
             .s_rst                 ( s_rst                                                       ),
 
-            .i_FirstLine_done      ( o_AttnRam_Done                                              ),
-            .i_Finish_once         ( r_Finish_once                                               ),
+            .i_FirstLine_done      ( r_FinishLine                                                ),
+            .i_Finish_once         ( r_AttnRam_Done_d2                                           ),
 
             .i_SendData_valid      ( r_rd_data_valid_d1                                          ),
             .i_ValueSpikes         ( r_ValueRam_out[`TIME_STEPS * (k + 1) - 1 : `TIME_STEPS * k] ),
@@ -177,7 +190,7 @@ generate
             .s_clk                 ( s_clk                                                       ),
             .s_rst                 ( s_rst                                                       ),
 
-            .i_lif_thrd            ( `QK_SCALE                                                   ),
+            .i_lif_thrd            ( `QK_SCALE / 2                                               ),
             .i_PsumValid           ( r_rdfifo_valid                                              ),
             .i_PsumData            ( w_rdfifo_data[k]                                            ),
 
@@ -194,7 +207,7 @@ always@(*) begin
     case(s_curr_state)
         S_IDLE:             s_next_state = i_AttnRAM_Empty ? S_IDLE : S_READ_DATA;
         S_READ_DATA:        s_next_state = (o_AttnRam_rd_addr == `FINAL_FMAPS_WIDTH * `FINAL_FMAPS_WIDTH - 2) ? S_FETCH_DATA : S_READ_DATA;
-        S_FETCH_DATA:       s_next_state = (r_rdfifo_Cnt == 'd31) ? S_IDLE : S_FETCH_DATA;
+        S_FETCH_DATA:       s_next_state = (r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1) ? S_IDLE : S_FETCH_DATA;
         default:            s_next_state = S_IDLE;
     endcase
 

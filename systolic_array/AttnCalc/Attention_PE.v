@@ -69,7 +69,7 @@ PipelineAdder u_PipelineAdder_m02(
     .i_Spikesdata        ( w_alignSpikes_t2                                     ),
     .i_Spikesdata_valid  ( r_Spikesdata_valid                                   ),
     .o_SpikeSum          ( o_Calc_data[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2]),
-    .o_SpikeSum_valid    (  )
+    .o_SpikeSum_valid    ( )
 );
 
 PipelineAdder u_PipelineAdder_m03(

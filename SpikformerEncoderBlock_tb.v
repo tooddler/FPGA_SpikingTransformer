@@ -719,6 +719,11 @@ always@(posedge s_clk) begin
 end
 
 // ======= CHECK ALIGN-DATA =======
+// -- generate .coe files
+parameter align_lif_out_q_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/BRAM_QKV_q.txt";
+parameter align_lif_out_k_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/BRAM_QKV_k.txt";
+parameter align_lif_out_v_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/BRAM_QKV_v.txt";
+// --
 parameter align_lif_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t0.txt";
 parameter align_lif_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t1.txt";
 parameter align_lif_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/align_lif_out_t2.txt";
@@ -729,6 +734,8 @@ wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t1 ;
 wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t2 ;
 wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_alignSpikes_t3 ;
 
+reg [15 : 0]       r_align_lif_q_cnt=0 ; 
+reg [15 : 0]       r_align_lif_k_cnt=0 ; 
 reg [15 : 0]       r_align_lif_v_cnt=0 ; 
 
 genvar m;
@@ -742,7 +749,12 @@ generate
 endgenerate
 
 integer align_file0, align_file1, align_file2, align_file3;
+integer bram_q_file, bram_k_file, bram_v_file;
 initial begin
+    bram_q_file = $fopen(align_lif_out_q_path, "w");
+    bram_k_file = $fopen(align_lif_out_k_path, "w");
+    bram_v_file = $fopen(align_lif_out_v_path, "w");
+
     align_file0 = $fopen(align_lif_out_t0_path, "w");
     align_file1 = $fopen(align_lif_out_t1_path, "w");
     align_file2 = $fopen(align_lif_out_t2_path, "w");
@@ -751,21 +763,45 @@ end
 
 integer mm;
 always@(posedge s_clk) begin
-    if (r_align_lif_v_cnt == 'd768) begin
+    if (r_align_lif_q_cnt == 'd768) begin
         $display("align lif cal done");
         $fclose(align_file0);
         $fclose(align_file1);
         $fclose(align_file2);
         $fclose(align_file3);
+        $fclose(bram_q_file);
     end
     else if (w_lq_spikesLine_valid) begin
-        r_align_lif_v_cnt <= r_align_lif_v_cnt + 1'b1;
+        $fwrite(bram_q_file, "%h;\n", w_lq_spikesLine_out); 
+        r_align_lif_q_cnt <= r_align_lif_q_cnt + 1'b1;
         for (mm = 0; mm < `SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2; mm = mm + 1) begin
             $fwrite(align_file0, "%b\n", w_alignSpikes_t0[mm]); 
             $fwrite(align_file1, "%b\n", w_alignSpikes_t1[mm]); 
             $fwrite(align_file2, "%b\n", w_alignSpikes_t2[mm]); 
             $fwrite(align_file3, "%b\n", w_alignSpikes_t3[mm]); 
         end
+    end
+end
+
+always@(posedge s_clk) begin
+    if (r_align_lif_k_cnt == 'd768) begin
+        $display("bram_k_file write done");
+        $fclose(bram_k_file);
+    end
+    else if (w_lk_spikesLine_valid) begin
+        $fwrite(bram_k_file, "%h;\n", w_lk_spikesLine_out); 
+        r_align_lif_k_cnt <= r_align_lif_k_cnt + 1'b1;
+    end
+end
+
+always@(posedge s_clk) begin
+    if (r_align_lif_v_cnt == 'd768) begin
+        $display("bram_v_file write done");
+        $fclose(bram_v_file);
+    end
+    else if (w_lv_spikesLine_valid) begin
+        $fwrite(bram_v_file, "%h;\n", w_lv_spikesLine_out); 
+        r_align_lif_v_cnt <= r_align_lif_v_cnt + 1'b1;
     end
 end
 

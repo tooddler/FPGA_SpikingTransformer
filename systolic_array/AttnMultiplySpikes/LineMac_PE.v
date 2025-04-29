@@ -21,23 +21,23 @@ module LineMac_PE (
 );
 
 // -- wire
-wire                                                              w_fifo_full          ;
-wire                                                              w_fifo_empty         ;
-wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           w_ValueSpikes_ext    ;
-wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           w_Tmp_fifoin_Result  ;
-wire [47 : 0]                                                     w_fifoout_data       ;
+wire                                                              w_fifo_full            ;
+wire                                                              w_fifo_empty           ;
+wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           w_ValueSpikes_ext      ;
+wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           w_Tmp_fifoin_Result    ;
+wire [47 : 0]                                                     w_fifoout_data         ;
 
-wire signed [12 - 1 : 0]                                          w_MM_PsumData_T0     ;
-wire signed [12 - 1 : 0]                                          w_MM_PsumData_T1     ;
-wire signed [12 - 1 : 0]                                          w_MM_PsumData_T2     ;
-wire signed [12 - 1 : 0]                                          w_MM_PsumData_T3     ;
+wire [12 - 1 : 0]                                                 w_MM_PsumData_T0       ;
+wire [12 - 1 : 0]                                                 w_MM_PsumData_T1       ;
+wire [12 - 1 : 0]                                                 w_MM_PsumData_T2       ;
+wire [12 - 1 : 0]                                                 w_MM_PsumData_T3       ;
 
 // -- reg
-reg  [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           r_Tmp_fifoin_Result  ;
-reg  [48 - 1 : 0]                                                 r_Tmp_fifoin_Rslt_d0 ;
-reg                                                               r_SendData_valid     ;
-reg                                                               r_SendData_valid_d0  ;
-reg                                                               r_MMfifo_PsumFlag    ;
+reg  [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]           r_Tmp_fifoin_Result=0  ;
+reg  [48 - 1 : 0]                                                 r_Tmp_fifoin_Rslt_d0=0 ;
+reg                                                               r_SendData_valid       ;
+reg                                                               r_SendData_valid_d0    ;
+reg                                                               r_MMfifo_PsumFlag      ;
 
 // ------------------ Main Code ------------------ \\
 assign o_finalMacData_out     =    w_fifoout_data ;
@@ -49,21 +49,61 @@ assign w_ValueSpikes_ext      =    { {($clog2(2*`SYSTOLIC_UNIT_NUM)){i_ValueSpik
 assign w_Tmp_fifoin_Result    =    w_ValueSpikes_ext & i_AttnRAM_data ;
 
 assign w_MM_PsumData_T0       =    r_MMfifo_PsumFlag ? 
-                                   $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0]) 
-                                 + $signed(w_fifoout_data[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0]) 
-                                 : $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0]) ;
+                                   r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0] 
+                                 + w_fifoout_data[12*1 - 1 : 12*0] 
+                                 : r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0] ;
 assign w_MM_PsumData_T1       =    r_MMfifo_PsumFlag ? 
-                                   $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1]) 
-                                 + $signed(w_fifoout_data[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1]) 
-                                 : $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1]) ;
+                                   r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1] 
+                                 + w_fifoout_data[12*2 - 1 : 12*1]
+                                 : r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1] ;
 assign w_MM_PsumData_T2       =    r_MMfifo_PsumFlag ? 
-                                   $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2]) 
-                                 + $signed(w_fifoout_data[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2]) 
-                                 : $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2]) ;
+                                   r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2] 
+                                 + w_fifoout_data[12*3 - 1 : 12*2] 
+                                 : r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2] ;
 assign w_MM_PsumData_T3       =    r_MMfifo_PsumFlag ? 
-                                   $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3]) 
-                                 + $signed(w_fifoout_data[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3]) 
-                                 : $signed(r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3]) ;
+                                   r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3] 
+                                 + w_fifoout_data[12*4 - 1 : 12*3] 
+                                 : r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3] ;
+
+// --->>> start debug dot
+wire [12 - 1 : 0]   w_debug_Data_T0 ;
+wire [12 - 1 : 0]   w_debug_Data_T1 ;
+wire [12 - 1 : 0]   w_debug_Data_T2 ;
+wire [12 - 1 : 0]   w_debug_Data_T3 ;
+
+wire [5 - 1 : 0]   w_debug_inin_T0 ;
+wire [5 - 1 : 0]   w_debug_inin_T1 ;
+wire [5 - 1 : 0]   w_debug_inin_T2 ;
+wire [5 - 1 : 0]   w_debug_inin_T3 ;
+
+wire [12 - 1 : 0]   w_debug_fifoin_T0 ;
+wire [12 - 1 : 0]   w_debug_fifoin_T1 ;
+wire [12 - 1 : 0]   w_debug_fifoin_T2 ;
+wire [12 - 1 : 0]   w_debug_fifoin_T3 ;
+
+assign w_debug_inin_T0 = r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*1 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*0];
+assign w_debug_inin_T1 = r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*2 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*1];
+assign w_debug_inin_T2 = r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*3 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*2];
+assign w_debug_inin_T3 = r_Tmp_fifoin_Result[$clog2(2*`SYSTOLIC_UNIT_NUM)*4 - 1 : $clog2(2*`SYSTOLIC_UNIT_NUM)*3];
+
+assign w_debug_Data_T0 = w_fifoout_data[12*1 - 1 : 12*0];
+assign w_debug_Data_T1 = w_fifoout_data[12*2 - 1 : 12*1];
+assign w_debug_Data_T2 = w_fifoout_data[12*3 - 1 : 12*2];
+assign w_debug_Data_T3 = w_fifoout_data[12*4 - 1 : 12*3];
+
+assign w_debug_fifoin_T0 = r_Tmp_fifoin_Rslt_d0[12*1 - 1 : 12*0];
+assign w_debug_fifoin_T1 = r_Tmp_fifoin_Rslt_d0[12*2 - 1 : 12*1];
+assign w_debug_fifoin_T2 = r_Tmp_fifoin_Rslt_d0[12*3 - 1 : 12*2];
+assign w_debug_fifoin_T3 = r_Tmp_fifoin_Rslt_d0[12*4 - 1 : 12*3];
+
+reg [5 : 0]         r_debug_cnt=0;
+always@(posedge s_clk) begin
+    if (i_SendData_valid)
+        r_debug_cnt <= r_debug_cnt + 1'b1;
+    else
+        r_debug_cnt <= r_debug_cnt; 
+end
+// end debug dot <<<---
 
 always@(posedge s_clk) begin
     r_SendData_valid    <= i_SendData_valid ;
@@ -78,7 +118,7 @@ end
 
 // r_MMfifo_PsumFlag
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || i_Finish_once) //TODO: FIFO 读空的时候，表示完成一次矩阵乘，开始下一次
+    if (s_rst || i_Finish_once)
         r_MMfifo_PsumFlag <= 1'b0;
     else if (i_FirstLine_done)
         r_MMfifo_PsumFlag <= 1'b1;

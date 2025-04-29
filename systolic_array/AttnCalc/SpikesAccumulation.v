@@ -49,7 +49,7 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_InitAddr <= 'd0;
-    else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_1111 && r_KeyRam_cnt == 6'b11_0100)
+    else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_0100 && r_KeyRam_cnt == 6'b11_1111)
         r_InitAddr <= r_InitAddr + 'd16;
 end
 
@@ -59,7 +59,7 @@ always@(posedge s_clk, posedge s_rst) begin
         r_Spikesdata_valid_d0 <= 1'b0;
     else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_1111 && r_KeyRam_cnt == 6'b11_1111)
         r_Spikesdata_valid_d0 <= 1'b0;
-    else if (i_AttnRAM_Ready && i_SpikesTmpRam_Ready && ~o_Calc_valid)
+    else if (r_InitAddr[9 : 4] < `MULTI_HEAD_NUMS && i_AttnRAM_Ready && i_SpikesTmpRam_Ready && ~o_Calc_valid)
         r_Spikesdata_valid_d0 <= 1'b1;
 end
 
@@ -107,7 +107,7 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_KeyRam_baseaddr <= 'd0;
-    else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_1111 && r_KeyRam_cnt == 6'b11_0111)
+    else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_0111 && r_KeyRam_cnt == 6'b11_1111)
         r_KeyRam_baseaddr <= r_InitAddr;
     else if (r_Spikesdata_valid_d0 && r_QueryRam_cnt == 6'b11_1111 && r_KeyRam_cnt[3 : 0] == 4'b0111)
         r_KeyRam_baseaddr <= r_KeyRam_baseaddr + `MULTI_HEAD_NUMS*`SYSTOLIC_UNIT_NUM;

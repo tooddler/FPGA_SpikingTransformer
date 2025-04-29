@@ -22,19 +22,20 @@ module Tmp_AttnRAM_group (
 );
 
 // -- wire
-wire                                                        w_AttnRam_Empty            ;
-wire                                                        w_AttnRam_Full             ;
-wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]     w00_AttnRAM_data           ;
-wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]     w01_AttnRAM_data           ;
+wire                                                        w_AttnRam_Empty          ;
+wire                                                        w_AttnRam_Full           ;
+wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]     w00_AttnRAM_data         ;
+wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]     w01_AttnRAM_data         ;
 
 // -- reg
-reg  [1 : 0]                                                r_LoadAttn_Pointer=2'b00   ;
-reg  [1 : 0]                                                r_SendAttn_Pointer=2'b00   ;
-reg  [11 : 0]                                               r_AttnRam_WR_addr          ;
+reg  [1 : 0]                                                r_LoadAttn_Pointer=2'b00 ;
+reg  [1 : 0]                                                r_SendAttn_Pointer=2'b00 ;
+reg                                                         r_SendAttn_Switch=0      ;
+reg  [11 : 0]                                               r_AttnRam_WR_addr        ;
 
 // ------------------- Main Code ------------------- \\
 assign o_AttnRAM_Ready = ~w_AttnRam_Full;
-assign o_AttnRAM_data  = r_SendAttn_Pointer[0] ? w01_AttnRAM_data : w00_AttnRAM_data;
+assign o_AttnRAM_data  = r_SendAttn_Switch ? w01_AttnRAM_data : w00_AttnRAM_data;
 assign o_AttnRAM_Empty = w_AttnRam_Empty;
 assign w_AttnRam_Empty = r_LoadAttn_Pointer == r_SendAttn_Pointer;
 assign w_AttnRam_Full  = (r_LoadAttn_Pointer[1] ^ r_SendAttn_Pointer[1]) && (r_LoadAttn_Pointer[0] == r_SendAttn_Pointer[0]);
@@ -57,6 +58,8 @@ end
 
 // r_SendAttn_Pointer
 always@(posedge s_clk) begin
+    r_SendAttn_Switch <= r_SendAttn_Pointer[0];
+
     if (i_AttnRam_Done)
         r_SendAttn_Pointer <= r_SendAttn_Pointer + 1'b1;
     else 
