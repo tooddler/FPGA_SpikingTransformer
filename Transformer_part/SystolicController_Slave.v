@@ -20,7 +20,6 @@ module SystolicController_Slave #(
     input       [`DATA_WIDTH - 1 : 0]                i_weight_out           ,
     output reg                                       o_weight_valid         , 
     input                                            i_weight_ready         , // Not for handshake
-    output wire                                      load_w_finish          ,
     // interact with Systolic Array
     output reg                                       o_Init_PrepareData     ,
     input                                            i_Finish_Calc          ,
@@ -39,6 +38,7 @@ module SystolicController_Slave #(
     output reg                                       o_PsumFIFO_Valid       ,
     input        [`SYSTOLIC_PSUM_WIDTH - 1 : 0]      i_PsumFIFO_Data        ,
     // -- Send data 
+    output wire                                      o_Psum_Finish          ,
     output reg   [`SYSTOLIC_PSUM_WIDTH - 1 : 0]      o_PsumData             ,
     output reg                                       o_PsumValid        
 );
@@ -51,7 +51,6 @@ localparam  S_IDLE       =   0 ,
             S_LOAD_DATA  =   1 ,
             S_FETCH_DATA =   2 ;
 
-assign load_w_finish = 1'b0; // FIXME: ONLY SIM
 // --- wire ---
 wire                                        w_FIFO_full             ;
 wire                                        w_FIFO_empty            ;
@@ -118,6 +117,7 @@ always@(posedge s_clk) begin
 end
 
 // --------------- MtrxA Data proc --------------- \\ 
+assign o_Psum_Finish            =   w_MasterSend_FIFO_empty                       ;
 assign w_MasterSend_FIFO_empty  =   r_PkgWrite_ptr == r_PkgRead_ptr               ;
 assign MtrxA_slice_data         =   w_MasterSend_FIFOdout[63 : 0]                 ;
 assign MtrxA_slice_done         =   w_MasterSend_FIFOdout[64] & MtrxA_slice_valid ;

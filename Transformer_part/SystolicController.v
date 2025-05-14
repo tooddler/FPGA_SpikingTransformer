@@ -17,7 +17,6 @@ module SystolicController (
     input       [`DATA_WIDTH - 1 : 0]                i_weight_out           ,
     output reg                                       o_weight_valid         , 
     input                                            i_weight_ready         , // Not for handshake
-    output wire                                      load_w_finish          ,
     // interact with Systolic Array
     output reg                                       o_Init_PrepareData     ,
     input                                            i_Finish_Calc          ,
@@ -50,7 +49,6 @@ localparam  S_IDLE       =   0 ,
             S_FETCH_DATA =   2 ,
             S_DONE       =   3 ;
 
-assign load_w_finish = 1'b0; // FIXME: ONLY SIM
 // --- wire ---
 wire                                        w_BaseAddr_AddFlag      ;
 wire signed [15 : 0]                        w_ROM_bias_out          ;
@@ -206,7 +204,7 @@ end
 
 // o_Init_PrepareData
 always@(posedge s_clk) begin
-    if (s_curr_state == S_IDLE) // FIXME : Psum fifo 一拍能复位成功？
+    if (s_curr_state == S_IDLE)
         o_Init_PrepareData <= 1'b1;
     else 
         o_Init_PrepareData <= 1'b0;

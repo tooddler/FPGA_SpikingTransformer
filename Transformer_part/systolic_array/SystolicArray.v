@@ -27,7 +27,7 @@ module SystolicArray (
     // -- PsumFIFO Data Slices
     input       [`SYSTOLIC_UNIT_NUM - 1 : 0]          i_PsumFIFO_Grant    ,
     input                                             i_PsumFIFO_Valid    ,
-    output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]        o_PsumFIFO_Data=0  
+    output reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]        o_PsumFIFO_Data=0   
 );
 
 // --- wire ---  
@@ -145,7 +145,7 @@ endgenerate
 
 // r_Systolic_Col_valid
 always@(posedge s_clk) begin
-    if (i_Init_PrepareData)
+    if (s_rst)
         r_Systolic_Col_valid <= {{(`SYSTOLIC_UNIT_NUM - 1){1'b0}}, 1'b1};
     else if (MtrxB_slice_ready && MtrxB_slice_valid && r_Systolic_Row_valid[`SYSTOLIC_UNIT_NUM - 1] && r_Systolic_Col_valid[`SYSTOLIC_UNIT_NUM - 1])
         r_Systolic_Col_valid <= {{(`SYSTOLIC_UNIT_NUM - 1){1'b0}}, 1'b1};
@@ -155,7 +155,7 @@ end
 
 // r_Systolic_Row_valid
 always@(posedge s_clk) begin
-    if (i_Init_PrepareData)
+    if (s_rst)
         r_Systolic_Row_valid <= {{(`SYSTOLIC_UNIT_NUM - 8){1'b0}}, 8'hff};
     else if (r_Systolic_Row_valid[`SYSTOLIC_UNIT_NUM - 1])
         r_Systolic_Row_valid <= {{(`SYSTOLIC_UNIT_NUM - 8){1'b0}}, 8'hff};

@@ -3,7 +3,7 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : Spikformer ATTN Block testbench
-    sim-time: 600 us
+    sim-time: 820 us
 */
 
 `include "hyper_para.v"
@@ -29,8 +29,9 @@ wire [11 : 0]                                            w_AttnRam_rd_addr    ;
 wire                                                     w_AttnRAM_Empty      ; 
 wire [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]  w_AttnRAM_data       ; 
 
-wire [`TIME_STEPS * `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS  - 1 : 0]    w_spikes_out   ;
-wire                                                                    w_spikes_valid ;
+wire [`PATCH_EMBED_WIDTH*2 - 1 : 0]                      w_attn_v_spikes_data ;
+wire                                                     w_attn_v_spikes_valid;
+wire                                                     w_attn_v_spikes_done ;
 
 initial s_clk = 1'b1;
 always #(`CLK_PERIOD/2) s_clk = ~s_clk;
@@ -104,8 +105,9 @@ MM_Calculator u_MM_Calculator(
     .o_ValueRam_rdaddr     ( w_ValueRam_rdaddr     ),
     .i_ValueRam_out        ( w_ValueRam_out        ),
 
-    .o_spikes_out          ( w_spikes_out          ),
-    .o_spikes_valid        ( w_spikes_valid        )
+    .o_attn_v_spikes_data  ( w_attn_v_spikes_data  ),
+    .o_attn_v_spikes_valid ( w_attn_v_spikes_valid ),
+    .o_attn_v_spikes_done  ( w_attn_v_spikes_done  )
 );
 
 // GET DATA ----------------------------------------------------------------------------------------------------------------
@@ -154,8 +156,7 @@ integer attnVfile0,
         attnVfile2, 
         attnVfile3;
 
-integer attnV_i;
-reg [15 : 0]        r_CalcMulti_attnv_cnt=0 ;
+reg [20 : 0]        r_CalcMulti_attnv_cnt=0 ;
 
 initial begin
     attnVfile0 = $fopen(attn_v_out_t0_path, "w");
@@ -165,21 +166,19 @@ initial begin
 end
 
 always@(posedge s_clk) begin
-    if (r_CalcMulti_attnv_cnt == 'd768) begin
+    if (r_CalcMulti_attnv_cnt == 'd24576) begin
         $display("attn @ V cal done");
         $fclose(attnVfile0);
         $fclose(attnVfile1);
         $fclose(attnVfile2);
         $fclose(attnVfile3);
     end
-    else if (u_MM_Calculator.r_rdfifo_valid) begin
+    else if (| u_MM_Calculator.r_rdfifo_valid) begin
         r_CalcMulti_attnv_cnt <= r_CalcMulti_attnv_cnt + 1'b1;
-        for (attnV_i = 0; attnV_i < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; attnV_i = attnV_i + 1) begin
-            $fwrite(attnVfile0, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][11:0]); 
-            $fwrite(attnVfile1, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][23:12]); 
-            $fwrite(attnVfile2, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][35:24]); 
-            $fwrite(attnVfile3, "%d\n", u_MM_Calculator.w_rdfifo_data[attnV_i][47:36]); 
-        end
+        $fwrite(attnVfile0, "%d\n", u_MM_Calculator.r4lif_rdfifo_data[11:0]); 
+        $fwrite(attnVfile1, "%d\n", u_MM_Calculator.r4lif_rdfifo_data[23:12]); 
+        $fwrite(attnVfile2, "%d\n", u_MM_Calculator.r4lif_rdfifo_data[35:24]); 
+        $fwrite(attnVfile3, "%d\n", u_MM_Calculator.r4lif_rdfifo_data[47:36]); 
     end
 end
 
@@ -196,18 +195,11 @@ integer lif_attnVfile0,
 integer lif_attnV_i;
 reg [15 : 0]        r_lif_CalcMulti_attnv_cnt=0 ;
 
-wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t0 ;
-wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t1 ;
-wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t2 ;
-wire [`SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2 - 1 : 0]       w_attnv_Spikes_t3 ;
-
-genvar m;
+wire [1 : 0]        w_trsfrmrdata    [`PATCH_EMBED_WIDTH - 1 : 0];
+genvar nnnn;
 generate
-    for (m = 0; m < `SYSTOLIC_UNIT_NUM*`TIME_STEPS / 2; m = m + 1) begin
-        assign w_attnv_Spikes_t0[m] = w_spikes_out[`TIME_STEPS * m + 0]; 
-        assign w_attnv_Spikes_t1[m] = w_spikes_out[`TIME_STEPS * m + 1];
-        assign w_attnv_Spikes_t2[m] = w_spikes_out[`TIME_STEPS * m + 2];
-        assign w_attnv_Spikes_t3[m] = w_spikes_out[`TIME_STEPS * m + 3];
+    for (nnnn = 0; nnnn < `PATCH_EMBED_WIDTH; nnnn = nnnn + 1) begin
+        assign w_trsfrmrdata[nnnn] = w_attn_v_spikes_data[2*nnnn + 1 : 2*nnnn];
     end
 endgenerate
 
@@ -218,23 +210,25 @@ initial begin
     lif_attnVfile3 = $fopen(lif_attn_v_out_t3_path, "w");
 end
 
+integer embedpatch_num;
 always@(posedge s_clk) begin
-    if (r_lif_CalcMulti_attnv_cnt == 'd768) begin
+    if (r_lif_CalcMulti_attnv_cnt == 'd3072) begin
         $display("lif attn @ V cal done");
         $fclose(lif_attnVfile0);
         $fclose(lif_attnVfile1);
         $fclose(lif_attnVfile2);
         $fclose(lif_attnVfile3);
     end
-    else if (w_spikes_valid) begin
+    else if (w_attn_v_spikes_valid) begin
         r_lif_CalcMulti_attnv_cnt <= r_lif_CalcMulti_attnv_cnt + 1'b1;
-        for (lif_attnV_i = 0; lif_attnV_i < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; lif_attnV_i = lif_attnV_i + 1) begin
-            $fwrite(lif_attnVfile0, "%b\n", w_attnv_Spikes_t0[lif_attnV_i]); 
-            $fwrite(lif_attnVfile1, "%b\n", w_attnv_Spikes_t1[lif_attnV_i]); 
-            $fwrite(lif_attnVfile2, "%b\n", w_attnv_Spikes_t2[lif_attnV_i]); 
-            $fwrite(lif_attnVfile3, "%b\n", w_attnv_Spikes_t3[lif_attnV_i]); 
+        for (embedpatch_num = 0; embedpatch_num < 8; embedpatch_num = embedpatch_num + 1) begin
+            $fwrite(lif_attnVfile0, "%d\n", w_trsfrmrdata[4*embedpatch_num + 0]); 
+            $fwrite(lif_attnVfile1, "%d\n", w_trsfrmrdata[4*embedpatch_num + 1]); 
+            $fwrite(lif_attnVfile2, "%d\n", w_trsfrmrdata[4*embedpatch_num + 2]); 
+            $fwrite(lif_attnVfile3, "%d\n", w_trsfrmrdata[4*embedpatch_num + 3]); 
         end
     end
 end
+
 
 endmodule // AttnCalcBlock_tb

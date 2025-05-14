@@ -16,15 +16,33 @@ module PatchEmbed (
     // read Embedded RAM
     input       [11 : 0]                             i_rd_addr              ,
     output reg  [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     o_ramout_data          , // ** Attn : delay 2 clk **      
-    output reg                                       o_ramout_ready         
+    output reg                                       o_ramout_ready         ,
+    // - MLP INTERFACE
+    input                                            i_switch               ,
+    input       [0 : 0]                              i_MLPs_wea             , 
+    input       [11 : 0]                             i_MLPs_addra           ,
+    input       [63 : 0]                             i_MLPs_dina            , 
+    input       [11 : 0]                             i_MLPs_addrb           , 
+    output wire [63 : 0]                             o_MLPs_doutb
 );
 
 wire   [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     w_trsfrmrdata           ;
 wire   [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     w_ramout_data           ;
 
+wire   [0 : 0]                              w_EmbeddedRAM_wea       ;
+wire   [11 : 0]                             w_EmbeddedRAM_addra     ;
+wire   [63 : 0]                             w_EmbeddedRAM_dina      ; 
+wire   [11 : 0]                             w_EmbeddedRAM_addrb     ;
+
 reg                                         r_trsfrmrdata_valid=0   ;
 reg    [`PATCH_EMBED_WIDTH * 2 - 1 : 0]     r_trsfrmrdata=0         ;
 reg    [11 : 0]                             r_wr_addr               ;
+
+assign w_EmbeddedRAM_wea   = i_switch ? i_MLPs_wea   : r_trsfrmrdata_valid  ;
+assign w_EmbeddedRAM_addra = i_switch ? i_MLPs_addra : r_wr_addr            ;
+assign w_EmbeddedRAM_dina  = i_switch ? i_MLPs_dina  : r_trsfrmrdata        ;
+assign w_EmbeddedRAM_addrb = i_switch ? i_MLPs_addrb : i_rd_addr            ;
+assign o_MLPs_doutb        = o_ramout_data ;
 
 // r_trsfrmrdata_valid
 always@(posedge s_clk) begin
@@ -78,12 +96,12 @@ endgenerate
 
 EmbeddedRAM EmbeddedRAM_m0 (
     .clka       ( s_clk                 ),  // input wire clka
-    .wea        ( r_trsfrmrdata_valid   ),  // input wire [0 : 0] wea
-    .addra      ( r_wr_addr             ),  // input wire [11 : 0] addra
-    .dina       ( r_trsfrmrdata         ),  // input wire [63 : 0] dina
+    .wea        ( w_EmbeddedRAM_wea     ),  // input wire [0 : 0] wea
+    .addra      ( w_EmbeddedRAM_addra   ),  // input wire [11 : 0] addra
+    .dina       ( w_EmbeddedRAM_dina    ),  // input wire [63 : 0] dina
 
     .clkb       ( s_clk                 ),  // input wire clkb
-    .addrb      ( i_rd_addr             ),  // input wire [11 : 0] addrb
+    .addrb      ( w_EmbeddedRAM_addrb   ),  // input wire [11 : 0] addrb
     .doutb      ( w_ramout_data         )   // output wire [63 : 0] doutb
 );
 

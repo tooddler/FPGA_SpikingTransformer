@@ -63,12 +63,14 @@
 `define     SYSTOLIC_WEIGHT_WIDTH       8
 // e.g. A(M x K) B(K x N)  to avaid overflow : 
 // psum_width = SYSTOLIC_DATA_WIDTH / TIME_STEPS * 8bit(weight) + log2(K)
-`define     SYSTOLIC_PSUM_WIDTH         80               // 20 bit * TIME_STEPS = 64 bit    
-// qkv_linearWeights
-`define     WEIGHTS_Q_BASEADDR          32'h2000_0000    // end -> 32'h2002_4000
-`define     WEIGHTS_K_BASEADDR          32'h2003_0000    // end -> 32'h2005_4000
-`define     WEIGHTS_V_BASEADDR          32'h2006_0000    // end -> 32'h2007_4000
+`define     SYSTOLIC_PSUM_WIDTH         80               // 20 bit * TIME_STEPS   
+// qkv_linearWeights --> MLP-WEIGHTS + ATTN-LINEAR-WEIGHTS = 20'h9_0000
+`define     WEIGHTS_Q_BASEADDR          32'h2000_0000    // end -> 32'h2009_0000
+`define     WEIGHTS_K_BASEADDR          32'h200A_0000    // end -> 32'h2013_0000
+`define     WEIGHTS_V_BASEADDR          32'h2014_0000    // end -> 32'h201D_0000
 `define     FINAL_FMAPS_CHNNLS          384
 `define     FINAL_FMAPS_WIDTH           64
 `define     MULTI_HEAD_NUMS             12
 `define     QK_SCALE                    8                // q @ k^T / scale 
+// mlp linear layers
+`define     MLP_HIDDEN_WIDTH            1536             // 384 x 4

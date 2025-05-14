@@ -8,7 +8,9 @@
 `include "../hyper_para.v"
 module TOP_qkv_linearCalc (
     input                                                       s_clk                ,
-    input                                                       s_rst                , 
+    input                                                       s_rst                ,
+
+    input                                                       i_load_w_finish      , 
     // get fmaps and patch
     input                                                       i_data_valid         ,
     input       [`PATCH_EMBED_WIDTH - 1 : 0]                    i_fmap               ,
@@ -51,17 +53,14 @@ wire                                                 w_ramout_ready          ;
 wire     [`DATA_WIDTH - 1 : 0]                       w_lq_weight_out         ;
 wire                                                 w_lq_weight_valid       ;
 wire                                                 w_lq_weight_ready       ;
-wire                                                 lq_load_w_finish        ;
 
 wire     [`DATA_WIDTH - 1 : 0]                       w_lk_weight_out         ;
 wire                                                 w_lk_weight_valid       ;
 wire                                                 w_lk_weight_ready       ;
-wire                                                 lk_load_w_finish        ;
 
 wire     [`DATA_WIDTH - 1 : 0]                       w_lv_weight_out         ;
 wire                                                 w_lv_weight_valid       ;
 wire                                                 w_lv_weight_ready       ;
-wire                                                 lv_load_w_finish        ;
 
 wire                                                 m00_MtrxA_slice_valid   ;
 wire  [`DATA_WIDTH - 1 : 0]                          m00_MtrxA_slice_data    ;
@@ -100,6 +99,9 @@ wire                                                 w_lv_Finish_Calc        ;
 wire [`SYSTOLIC_UNIT_NUM - 1 : 0]                    w_lq_PsumFIFO_Grant     ;
 wire                                                 w_lq_PsumFIFO_Valid     ;
 wire                                                 w_lq_PsumFIFO_Finish    ;
+wire                                                 w_lk_PsumFIFO_Finish    ;
+wire                                                 w_lv_PsumFIFO_Finish    ;
+
 wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lq_PsumFIFO_Data      ;
 wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                  w_lq_PsumData           ;
 wire                                                 w_lq_PsumValid          ;
@@ -121,6 +123,17 @@ wire                                                 w_lk_spikes_valid       ;
 wire [`TIME_STEPS - 1 : 0]                           w_lv_spikes_out         ;
 wire                                                 w_lv_spikes_valid       ;
 
+reg                                                  r_Chnnl_Switch=0        ;
+
+// --------------- MAIN CODE --------------- \\ 
+// r_Chnnl_Switch
+always@(posedge s_clk) begin
+    if (w_lv_PsumFIFO_Finish && w_lq_PsumFIFO_Finish)
+        r_Chnnl_Switch <= 1'b1;
+    else 
+        r_Chnnl_Switch <= 1'b0;
+end
+
 // --------------- Patch Embed --------------- \\ 
 PatchEmbed u_PatchEmbed (
     .s_clk                  ( s_clk             ),
@@ -131,7 +144,14 @@ PatchEmbed u_PatchEmbed (
 
     .i_rd_addr              ( w_rd_addr         ),
     .o_ramout_data          ( w_ramout_data     ),
-    .o_ramout_ready         ( w_ramout_ready    )
+    .o_ramout_ready         ( w_ramout_ready    ),
+
+    .i_switch               ( r_Chnnl_Switch    ),
+    .i_MLPs_wea             (  ),
+    .i_MLPs_addra           (  ),
+    .i_MLPs_dina            (  ),
+    .i_MLPs_addrb           (  ),
+    .o_MLPs_doutb           (  )
 );
 
 // --------------- Weights Loader --------------- \\ 
@@ -151,7 +171,7 @@ weight_fifo_v1 #(
     .o_weight_out           ( w_lq_weight_out      ),
     .i_weight_valid         ( w_lq_weight_valid    ),
     .o_weight_ready         ( w_lq_weight_ready    ),
-    .load_w_finish          ( lq_load_w_finish     )
+    .load_w_finish          ( i_load_w_finish      )
 );
 
 weight_fifo_v1 #(
@@ -170,7 +190,7 @@ weight_fifo_v1 #(
     .o_weight_out           ( w_lk_weight_out      ),
     .i_weight_valid         ( w_lk_weight_valid    ),
     .o_weight_ready         ( w_lk_weight_ready    ),
-    .load_w_finish          ( lk_load_w_finish     )
+    .load_w_finish          ( i_load_w_finish      )
 );
 
 weight_fifo_v1 #(
@@ -189,7 +209,7 @@ weight_fifo_v1 #(
     .o_weight_out           ( w_lv_weight_out      ),
     .i_weight_valid         ( w_lv_weight_valid    ),
     .o_weight_ready         ( w_lv_weight_ready    ),
-    .load_w_finish          ( lv_load_w_finish     )
+    .load_w_finish          ( i_load_w_finish      )
 );
 
 // ---------------  Systolic Controller --------------- \\ 
@@ -204,7 +224,6 @@ SystolicController u_SystolicController_Master_Q(
     .i_weight_out        ( w_lq_weight_out          ),
     .o_weight_valid      ( w_lq_weight_valid        ),
     .i_weight_ready      ( w_lq_weight_ready        ),
-    .load_w_finish       ( lq_load_w_finish         ),
 
     .o_Init_PrepareData  ( w_lq_Init_PrepareData    ),
     .i_Finish_Calc       ( w_lq_Finish_Calc         ),
@@ -240,7 +259,6 @@ SystolicController_Slave#(
     .i_weight_out        ( w_lk_weight_out         ),
     .o_weight_valid      ( w_lk_weight_valid       ),
     .i_weight_ready      ( w_lk_weight_ready       ),
-    .load_w_finish       ( lk_load_w_finish        ),
 
     .o_Init_PrepareData  ( w_lk_Init_PrepareData   ),
     .i_Finish_Calc       ( w_lk_Finish_Calc        ),
@@ -258,6 +276,7 @@ SystolicController_Slave#(
     .o_PsumFIFO_Valid    ( w_lk_PsumFIFO_Valid     ),
     .i_PsumFIFO_Data     ( w_lk_PsumFIFO_Data      ),
 
+    .o_Psum_Finish       ( w_lk_PsumFIFO_Finish    ),
     .o_PsumData          ( w_lk_PsumData           ),
     .o_PsumValid         ( w_lk_PsumValid          )
 );
@@ -275,7 +294,6 @@ SystolicController_Slave#(
     .i_weight_out        ( w_lv_weight_out         ),
     .o_weight_valid      ( w_lv_weight_valid       ),
     .i_weight_ready      ( w_lv_weight_ready       ),
-    .load_w_finish       ( lv_load_w_finish        ),
 
     .o_Init_PrepareData  ( w_lv_Init_PrepareData   ),
     .i_Finish_Calc       ( w_lv_Finish_Calc        ),
@@ -293,6 +311,7 @@ SystolicController_Slave#(
     .o_PsumFIFO_Valid    ( w_lv_PsumFIFO_Valid     ),
     .i_PsumFIFO_Data     ( w_lv_PsumFIFO_Data      ),
 
+    .o_Psum_Finish       ( w_lv_PsumFIFO_Finish    ),
     .o_PsumData          ( w_lv_PsumData           ),
     .o_PsumValid         ( w_lv_PsumValid          )
 );

@@ -7,19 +7,20 @@
 
 `include "../../hyper_para.v"
 module MM_Calculator (
-    input                                                                          s_clk                ,
-    input                                                                          s_rst                ,  
+    input                                                            s_clk                  ,
+    input                                                            s_rst                  ,  
     // interact with Tmp_AttnRAM_group
-    output reg                                                                     o_AttnRam_Done       , 
-    output reg  [11 : 0]                                                           o_AttnRam_rd_addr    ,
-    input                                                                          i_AttnRAM_Empty      ,
-    input       [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]                 i_AttnRAM_data       , // delay 1 clk
+    output reg                                                       o_AttnRam_Done         , 
+    output reg  [11 : 0]                                             o_AttnRam_rd_addr      ,
+    input                                                            i_AttnRAM_Empty        ,
+    input       [$clog2(2*`SYSTOLIC_UNIT_NUM)*`TIME_STEPS - 1 : 0]   i_AttnRAM_data         , // delay 1 clk
     // interact with ValueRAM   
-    output reg  [9 : 0]                                                            o_ValueRam_rdaddr    ,
-    input       [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]                         i_ValueRam_out       ,  // delay 1 clk
+    output reg  [9 : 0]                                              o_ValueRam_rdaddr      ,
+    input       [2*`SYSTOLIC_UNIT_NUM*`TIME_STEPS - 1 : 0]           i_ValueRam_out         ,  // delay 1 clk
     // spikesdata-out
-    output wire [`TIME_STEPS * `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS  - 1 : 0]    o_spikes_out         ,
-    output wire                                                                    o_spikes_valid       
+    output wire [`PATCH_EMBED_WIDTH*2 - 1 : 0]                       o_attn_v_spikes_data   ,
+    output wire                                                      o_attn_v_spikes_valid  ,
+    output reg                                                       o_attn_v_spikes_done=0     
 );
 
 localparam  S_IDLE       =   0 ,
@@ -27,8 +28,9 @@ localparam  S_IDLE       =   0 ,
             S_FETCH_DATA =   2 ;
 
 // --- wire ---
-wire [`TIME_STEPS * `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS  - 1 : 0]    w_spikes_out    ; // 128
-wire [`FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS - 1 : 0]                   w_spikes_valid  ;
+wire [`TIME_STEPS - 1 : 0]                                              w_spikes_out          ; 
+wire [`TIME_STEPS*2 - 1 : 0]                                            w_spikes_out_ext      ; 
+wire                                                                    w_spikes_valid        ;
 wire [47 : 0]                                                           w_rdfifo_data   [`FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS - 1 : 0]     ;
 
 // --- reg ---
@@ -46,12 +48,14 @@ reg  [$clog2(`SYSTOLIC_UNIT_NUM) + 1 : 0]                   r_ValueRam_Cnt      
 reg                                                         r_FinishLine_pre0=0  ;
 reg                                                         r_FinishLine_pre1=0  ;
 reg                                                         r_FinishLine=0       ;
-reg                                                         r_rdfifo_valid       ;
+reg  [`FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS - 1 : 0]       r_rdfifo_valid       ;
 reg  [$clog2(`FINAL_FMAPS_WIDTH) - 1 : 0]                   r_rdfifo_Cnt         ;
 reg                                                         r_AttnRam_Done_d0    ;
 reg                                                         r_AttnRam_Done_d1    ;
 reg                                                         r_AttnRam_Done_d2    ;
 reg                                                         r_AttnRam_Done_d3    ;
+reg  [47 : 0]                                               r4lif_rdfifo_data='d0; 
+reg  [15 : 0]                                               r_lif_attnv_cnt      ;
 
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
@@ -62,9 +66,6 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // --------------- Basic logic --------------- \\ 
-assign o_spikes_out   = w_spikes_out      ;
-assign o_spikes_valid = w_spikes_valid[0] ;
-
 // r_FinishLine_pre0
 always@(posedge s_clk) begin
     r_FinishLine_pre1 <= r_FinishLine_pre0;
@@ -98,21 +99,36 @@ always@(posedge s_clk, posedge s_rst) begin
         r_InitAddr <= r_InitAddr + 'd16;
 end
 
+// ---- read fifo data ----
 // r_rdfifo_Cnt
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst) 
         r_rdfifo_Cnt <= 'd0 ;
-    else if (r_rdfifo_valid) 
+    else if (| r_rdfifo_valid) 
         r_rdfifo_Cnt <= r_rdfifo_Cnt + 1'b1;
 end
 
 // r_rdfifo_valid
+genvar ii;
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst || r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1) 
-        r_rdfifo_valid <= 1'b0;
+        r_rdfifo_valid[0] <= 1'b0;
     else if (s_curr_state == S_FETCH_DATA && r_AttnRam_Done_d3) 
-        r_rdfifo_valid <= 1'b1;
+        r_rdfifo_valid[0] <= 1'b1;
 end
+
+generate 
+    for (ii = 1; ii < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; ii = ii + 1) begin
+
+        always@(posedge s_clk, posedge s_rst) begin
+            if (s_rst) 
+                r_rdfifo_valid[ii] <= 1'b0;
+            else if (r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1)
+                r_rdfifo_valid[ii] <= r_rdfifo_valid[ii - 1];
+        end
+    
+    end
+endgenerate
 
 // --------------- READ AttnRAM DATA --------------- \\ 
 // o_AttnRam_rd_addr
@@ -166,7 +182,7 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // --------------- LineMac-PE-Group --------------- \\
-genvar k;
+genvar k, ee;
 generate 
     for (k = 0; k < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; k = k + 1) begin : MtrxCalc_Attn_V
         LineMac_PE u_LineMac_PE(
@@ -180,26 +196,68 @@ generate
             .i_ValueSpikes         ( r_ValueRam_out[`TIME_STEPS * (k + 1) - 1 : `TIME_STEPS * k] ),
             .i_AttnRAM_data        ( r_AttnRAM_data                                              ),
             
-            .i_finalMacData_valid  ( r_rdfifo_valid                                              ),
+            .i_finalMacData_valid  ( r_rdfifo_valid[k]                                           ),
             .o_finalMacData_out    ( w_rdfifo_data[k]                                            )
-        );
-
-        LIF_group #(
-            .PSUM_WIDTH            ( 48                                                          )
-        ) u_LIF_group(
-            .s_clk                 ( s_clk                                                       ),
-            .s_rst                 ( s_rst                                                       ),
-
-            .i_lif_thrd            ( `QK_SCALE / 2                                               ),
-            .i_PsumValid           ( r_rdfifo_valid                                              ),
-            .i_PsumData            ( w_rdfifo_data[k]                                            ),
-
-            .o_spikes_out          ( w_spikes_out[`TIME_STEPS * (k + 1) - 1 : `TIME_STEPS * k]   ),
-            .o_spikes_valid        ( w_spikes_valid[k]                                           )
         );
 
     end
 endgenerate
+
+integer d;
+always@(*) begin
+    for (d = 0; d < `FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS; d = d + 1) begin
+        if (r_rdfifo_valid[d])
+            r4lif_rdfifo_data <= w_rdfifo_data[d];
+    end
+end
+
+LIF_group #(
+    .PSUM_WIDTH            ( 48                                                          )
+) u_LIF_group(
+    .s_clk                 ( s_clk                                                       ),
+    .s_rst                 ( s_rst                                                       ),
+    .i_lif_thrd            ( `QK_SCALE / 2                                               ),
+
+    .i_PsumValid           ( |r_rdfifo_valid                                             ),
+    .i_PsumData            ( r4lif_rdfifo_data                                           ),
+    .o_spikes_out          ( w_spikes_out                                                ),
+    .o_spikes_valid        ( w_spikes_valid                                              )
+);
+
+generate
+    for (ee = 0; ee < `TIME_STEPS; ee = ee + 1) begin
+        assign w_spikes_out_ext[2*(ee+1) - 1 : 2*ee] = {1'b0, w_spikes_out[ee]};
+    end
+endgenerate
+
+attn_v_spikes_reshaping u_attn_v_spikes_reshaping(
+    .s_clk                      ( s_clk                     ),
+    .s_rst                      ( s_rst                     ),
+
+    .i_spikes_out_ext           ( w_spikes_out_ext          ),
+    .i_spikes_valid             ( w_spikes_valid            ),
+
+    .o_attn_v_spikes_data       ( o_attn_v_spikes_data      ),
+    .o_attn_v_spikes_valid      ( o_attn_v_spikes_valid     )
+);
+
+// r_lif_attnv_cnt
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_lif_attnv_cnt <= 'd0;
+    else if (o_attn_v_spikes_done)
+        r_lif_attnv_cnt <= 'd0;
+    else if (o_attn_v_spikes_valid)
+        r_lif_attnv_cnt <= r_lif_attnv_cnt + 1'b1;
+end
+
+// o_attn_v_spikes_done
+always@(posedge s_clk) begin
+    if (r_lif_attnv_cnt == 'd3070)
+        o_attn_v_spikes_done <= 1'b1;
+    else
+        o_attn_v_spikes_done <= 1'b0;
+end
 
 // --------------- Finite-State-Machine --------------- \\
 always@(*) begin
@@ -207,7 +265,8 @@ always@(*) begin
     case(s_curr_state)
         S_IDLE:             s_next_state = i_AttnRAM_Empty ? S_IDLE : S_READ_DATA;
         S_READ_DATA:        s_next_state = (o_AttnRam_rd_addr == `FINAL_FMAPS_WIDTH * `FINAL_FMAPS_WIDTH - 2) ? S_FETCH_DATA : S_READ_DATA;
-        S_FETCH_DATA:       s_next_state = (r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1) ? S_IDLE : S_FETCH_DATA;
+        S_FETCH_DATA:       s_next_state = (r_rdfifo_Cnt == `FINAL_FMAPS_WIDTH - 1 && r_rdfifo_valid[`FINAL_FMAPS_CHNNLS / `MULTI_HEAD_NUMS - 1]) 
+                                           ? S_IDLE : S_FETCH_DATA;
         default:            s_next_state = S_IDLE;
     endcase
 
