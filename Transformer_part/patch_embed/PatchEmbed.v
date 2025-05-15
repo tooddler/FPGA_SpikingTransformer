@@ -42,7 +42,7 @@ assign w_EmbeddedRAM_wea   = i_switch ? i_MLPs_wea   : r_trsfrmrdata_valid  ;
 assign w_EmbeddedRAM_addra = i_switch ? i_MLPs_addra : r_wr_addr            ;
 assign w_EmbeddedRAM_dina  = i_switch ? i_MLPs_dina  : r_trsfrmrdata        ;
 assign w_EmbeddedRAM_addrb = i_switch ? i_MLPs_addrb : i_rd_addr            ;
-assign o_MLPs_doutb        = o_ramout_data ;
+assign o_MLPs_doutb        = w_ramout_data ;
 
 // r_trsfrmrdata_valid
 always@(posedge s_clk) begin

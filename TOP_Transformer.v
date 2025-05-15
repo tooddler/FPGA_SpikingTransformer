@@ -232,8 +232,9 @@ wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                      w_Ary02_PsumFIFO_Data  
 // -- reg -- 
 reg                                                      r_Chnnl_Switch=0           ;
 reg  [13 : 0]                                            r_MLP_in_addr              ; 
-reg                                                      r_attn_v_spikes_Finish     ;
-reg                                                      r_attn_v_spikes_done=0     ;
+reg  [7 : 0]                                             r_attn_v_spikes_Finish[2 : 0] ;
+
+reg  [2 : 0]                                             r_attn_v_spikes_done=0     ;
 
 // --------------- Patch Embed --------------- \\ 
 // r_Chnnl_Switch
@@ -616,60 +617,60 @@ MM_Calculator u_MM_Calculator(
 );
 
 // --------------- Systolic Signal Arbit Proc --------------- \\ 
-assign w_Ary00_Init_PrepareData = r_attn_v_spikes_Finish ? w_mlp_Init_PrepareData : w_lq_Init_PrepareData ;
-assign w_Ary01_Init_PrepareData = r_attn_v_spikes_Finish ? w_mlp_Init_PrepareData : w_lk_Init_PrepareData ;
-assign w_Ary02_Init_PrepareData = r_attn_v_spikes_Finish ? w_mlp_Init_PrepareData : w_lv_Init_PrepareData ;
+assign w_Ary00_Init_PrepareData = r_attn_v_spikes_Finish[2][4] ? w_mlp_Init_PrepareData : w_lq_Init_PrepareData ;
+assign w_Ary01_Init_PrepareData = r_attn_v_spikes_Finish[2][4] ? w_mlp_Init_PrepareData : w_lk_Init_PrepareData ;
+assign w_Ary02_Init_PrepareData = r_attn_v_spikes_Finish[2][4] ? w_mlp_Init_PrepareData : w_lv_Init_PrepareData ;
 
-assign w_lq_Finish_Calc = r_attn_v_spikes_Finish ? 1'b0 : w_Ary00_Finish_Calc;
-assign w_lk_Finish_Calc = r_attn_v_spikes_Finish ? 1'b0 : w_Ary01_Finish_Calc;
-assign w_lv_Finish_Calc = r_attn_v_spikes_Finish ? 1'b0 : w_Ary02_Finish_Calc;
+assign w_lq_Finish_Calc = r_attn_v_spikes_Finish[2][5] ? 1'b0 : w_Ary00_Finish_Calc;
+assign w_lk_Finish_Calc = r_attn_v_spikes_Finish[2][5] ? 1'b0 : w_Ary01_Finish_Calc;
+assign w_lv_Finish_Calc = r_attn_v_spikes_Finish[2][5] ? 1'b0 : w_Ary02_Finish_Calc;
 
-assign w00_mlp_Finish_Calc = r_attn_v_spikes_Finish ? w_Ary00_Finish_Calc : 1'b0;
-assign w01_mlp_Finish_Calc = r_attn_v_spikes_Finish ? w_Ary01_Finish_Calc : 1'b0;
-assign w02_mlp_Finish_Calc = r_attn_v_spikes_Finish ? w_Ary02_Finish_Calc : 1'b0;
+assign w00_mlp_Finish_Calc = r_attn_v_spikes_Finish[2][6] ? w_Ary00_Finish_Calc : 1'b0;
+assign w01_mlp_Finish_Calc = r_attn_v_spikes_Finish[2][6] ? w_Ary01_Finish_Calc : 1'b0;
+assign w02_mlp_Finish_Calc = r_attn_v_spikes_Finish[2][6] ? w_Ary02_Finish_Calc : 1'b0;
 
-assign m00_MtrxA_slice_ready = r_attn_v_spikes_Finish ? 1'b0 : w_Ary00_MtrxA_slice_ready;
-assign s00_MtrxA_slice_ready = r_attn_v_spikes_Finish ? 1'b0 : w_Ary01_MtrxA_slice_ready;
-assign s01_MtrxA_slice_ready = r_attn_v_spikes_Finish ? 1'b0 : w_Ary02_MtrxA_slice_ready;
+assign m00_MtrxA_slice_ready = r_attn_v_spikes_Finish[2][7] ? 1'b0 : w_Ary00_MtrxA_slice_ready;
+assign s00_MtrxA_slice_ready = r_attn_v_spikes_Finish[2][7] ? 1'b0 : w_Ary01_MtrxA_slice_ready;
+assign s01_MtrxA_slice_ready = r_attn_v_spikes_Finish[2][7] ? 1'b0 : w_Ary02_MtrxA_slice_ready;
 
-assign w_mlp_Mtrx00_slice_ready = r_attn_v_spikes_Finish ? w_Ary00_MtrxA_slice_ready : 1'b0;
-assign w_mlp_Mtrx01_slice_ready = r_attn_v_spikes_Finish ? w_Ary01_MtrxA_slice_ready : 1'b0;
-assign w_mlp_Mtrx02_slice_ready = r_attn_v_spikes_Finish ? w_Ary02_MtrxA_slice_ready : 1'b0;
+assign w_mlp_Mtrx00_slice_ready = r_attn_v_spikes_Finish[2][4] ? w_Ary00_MtrxA_slice_ready : 1'b0;
+assign w_mlp_Mtrx01_slice_ready = r_attn_v_spikes_Finish[2][4] ? w_Ary01_MtrxA_slice_ready : 1'b0;
+assign w_mlp_Mtrx02_slice_ready = r_attn_v_spikes_Finish[2][4] ? w_Ary02_MtrxA_slice_ready : 1'b0;
 
-assign w_Ary00_MtrxA_slice_valid = r_attn_v_spikes_Finish ? w_mlp_Mtrx00_slice_valid : m00_MtrxA_slice_valid;
-assign w_Ary00_MtrxA_slice_data  = r_attn_v_spikes_Finish ? w_mlp_Mtrx00_slice_data  : m00_MtrxA_slice_data ;
-assign w_Ary00_MtrxA_slice_done  = r_attn_v_spikes_Finish ? w_mlp_Mtrx00_slice_done  : m00_MtrxA_slice_done ;
+assign w_Ary00_MtrxA_slice_valid = r_attn_v_spikes_Finish[2][0] ? w_mlp_Mtrx00_slice_valid : m00_MtrxA_slice_valid;
+assign w_Ary00_MtrxA_slice_data  = r_attn_v_spikes_Finish[0][1] ? w_mlp_Mtrx00_slice_data  : m00_MtrxA_slice_data ;
+assign w_Ary00_MtrxA_slice_done  = r_attn_v_spikes_Finish[2][0] ? w_mlp_Mtrx00_slice_done  : m00_MtrxA_slice_done ;
 
-assign w_Ary01_MtrxA_slice_valid = r_attn_v_spikes_Finish ? w_mlp_Mtrx01_slice_valid : s00_MtrxA_slice_valid;
-assign w_Ary01_MtrxA_slice_data  = r_attn_v_spikes_Finish ? w_mlp_Mtrx01_slice_data  : s00_MtrxA_slice_data ;
-assign w_Ary01_MtrxA_slice_done  = r_attn_v_spikes_Finish ? w_mlp_Mtrx01_slice_done  : s00_MtrxA_slice_done ;
+assign w_Ary01_MtrxA_slice_valid = r_attn_v_spikes_Finish[2][1] ? w_mlp_Mtrx01_slice_valid : s00_MtrxA_slice_valid;
+assign w_Ary01_MtrxA_slice_data  = r_attn_v_spikes_Finish[1][0] ? w_mlp_Mtrx01_slice_data  : s00_MtrxA_slice_data ;
+assign w_Ary01_MtrxA_slice_done  = r_attn_v_spikes_Finish[2][1] ? w_mlp_Mtrx01_slice_done  : s00_MtrxA_slice_done ;
 
-assign w_Ary02_MtrxA_slice_valid = r_attn_v_spikes_Finish ? w_mlp_Mtrx02_slice_valid : s01_MtrxA_slice_valid;
-assign w_Ary02_MtrxA_slice_data  = r_attn_v_spikes_Finish ? w_mlp_Mtrx02_slice_data  : s01_MtrxA_slice_data ;
-assign w_Ary02_MtrxA_slice_done  = r_attn_v_spikes_Finish ? w_mlp_Mtrx02_slice_done  : s01_MtrxA_slice_done ;
+assign w_Ary02_MtrxA_slice_valid = r_attn_v_spikes_Finish[2][2] ? w_mlp_Mtrx02_slice_valid : s01_MtrxA_slice_valid;
+assign w_Ary02_MtrxA_slice_data  = r_attn_v_spikes_Finish[1][1] ? w_mlp_Mtrx02_slice_data  : s01_MtrxA_slice_data ;
+assign w_Ary02_MtrxA_slice_done  = r_attn_v_spikes_Finish[2][2] ? w_mlp_Mtrx02_slice_done  : s01_MtrxA_slice_done ;
 
-assign w_Ary00_PsumFIFO_Grant = r_attn_v_spikes_Finish ? w00_mlp_PsumFIFO_Grant : w_lq_PsumFIFO_Grant;
-assign w_Ary01_PsumFIFO_Grant = r_attn_v_spikes_Finish ? w01_mlp_PsumFIFO_Grant : w_lk_PsumFIFO_Grant;
-assign w_Ary02_PsumFIFO_Grant = r_attn_v_spikes_Finish ? w02_mlp_PsumFIFO_Grant : w_lv_PsumFIFO_Grant;
+assign w_Ary00_PsumFIFO_Grant = r_attn_v_spikes_Finish[1][2] ? w00_mlp_PsumFIFO_Grant : w_lq_PsumFIFO_Grant;
+assign w_Ary01_PsumFIFO_Grant = r_attn_v_spikes_Finish[1][3] ? w01_mlp_PsumFIFO_Grant : w_lk_PsumFIFO_Grant;
+assign w_Ary02_PsumFIFO_Grant = r_attn_v_spikes_Finish[2][0] ? w02_mlp_PsumFIFO_Grant : w_lv_PsumFIFO_Grant;
 
-assign w_Ary00_PsumFIFO_Valid = r_attn_v_spikes_Finish ? w00_mlp_PsumFIFO_Valid : w_lq_PsumFIFO_Valid;
-assign w_Ary01_PsumFIFO_Valid = r_attn_v_spikes_Finish ? w01_mlp_PsumFIFO_Valid : w_lk_PsumFIFO_Valid;
-assign w_Ary02_PsumFIFO_Valid = r_attn_v_spikes_Finish ? w02_mlp_PsumFIFO_Valid : w_lv_PsumFIFO_Valid;
+assign w_Ary00_PsumFIFO_Valid = r_attn_v_spikes_Finish[2][1] ? w00_mlp_PsumFIFO_Valid : w_lq_PsumFIFO_Valid;
+assign w_Ary01_PsumFIFO_Valid = r_attn_v_spikes_Finish[2][2] ? w01_mlp_PsumFIFO_Valid : w_lk_PsumFIFO_Valid;
+assign w_Ary02_PsumFIFO_Valid = r_attn_v_spikes_Finish[2][3] ? w02_mlp_PsumFIFO_Valid : w_lv_PsumFIFO_Valid;
 
-assign w00_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish ? w_Ary00_PsumFIFO_Data : 'd0;
-assign w01_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish ? w_Ary01_PsumFIFO_Data : 'd0;
-assign w02_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish ? w_Ary02_PsumFIFO_Data : 'd0;
+assign w00_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish[1][2] ? w_Ary00_PsumFIFO_Data : 'd0;
+assign w01_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish[1][3] ? w_Ary01_PsumFIFO_Data : 'd0;
+assign w02_mlp_PsumFIFO_Data = r_attn_v_spikes_Finish[2][0] ? w_Ary02_PsumFIFO_Data : 'd0;
 
-assign w_lq_PsumFIFO_Data = r_attn_v_spikes_Finish ? 'd0 : w_Ary00_PsumFIFO_Data;
-assign w_lk_PsumFIFO_Data = r_attn_v_spikes_Finish ? 'd0 : w_Ary01_PsumFIFO_Data;
-assign w_lv_PsumFIFO_Data = r_attn_v_spikes_Finish ? 'd0 : w_Ary02_PsumFIFO_Data;
+assign w_lq_PsumFIFO_Data = r_attn_v_spikes_Finish[2][1] ? 'd0 : w_Ary00_PsumFIFO_Data;
+assign w_lk_PsumFIFO_Data = r_attn_v_spikes_Finish[2][2] ? 'd0 : w_Ary01_PsumFIFO_Data;
+assign w_lv_PsumFIFO_Data = r_attn_v_spikes_Finish[2][3] ? 'd0 : w_Ary02_PsumFIFO_Data;
 
 // --------------- MLPs --------------- \\ 
 mlp_controller u_mlp_controller(
     .s_clk                 ( s_clk                              ),
     .s_rst                 ( s_rst                              ),
 
-    .i_multi_linear_start  ( r_attn_v_spikes_done               ),
+    .i_multi_linear_start  ( r_attn_v_spikes_done[2]            ),
 
     .o_Mlp_Ram00_wea       ( w_Mlp_Ram00_wea                    ),
     .o_Mlp_Ram00_addra     ( w_Mlp_Ram00_addra                  ),
@@ -731,19 +732,39 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst) 
-        r_attn_v_spikes_Finish <= 1'b0;
-    else if (w_attn_v_spikes_done)
-        r_attn_v_spikes_Finish <= 1'b1;
+    if (s_rst) begin
+        r_attn_v_spikes_Finish[0][0] <= 1'b0;
+        r_attn_v_spikes_Finish[0][1] <= 1'b0;
+    end
+    else if (w_attn_v_spikes_done) begin
+        r_attn_v_spikes_Finish[0][0] <= 1'b1;
+        r_attn_v_spikes_Finish[0][1] <= 1'b1;
+    end
 end
 
 always@(posedge s_clk) begin
-    r_attn_v_spikes_done <= w_attn_v_spikes_done;
+    r_attn_v_spikes_Finish[1][0] <= r_attn_v_spikes_Finish[0][0];
+    r_attn_v_spikes_Finish[1][1] <= r_attn_v_spikes_Finish[0][0];
+
+    r_attn_v_spikes_Finish[1][2] <= r_attn_v_spikes_Finish[0][1];
+    r_attn_v_spikes_Finish[1][3] <= r_attn_v_spikes_Finish[0][1];
+
+    r_attn_v_spikes_Finish[2][0] <= r_attn_v_spikes_Finish[1][0];
+    r_attn_v_spikes_Finish[2][1] <= r_attn_v_spikes_Finish[1][0];
+    r_attn_v_spikes_Finish[2][2] <= r_attn_v_spikes_Finish[1][1];
+    r_attn_v_spikes_Finish[2][3] <= r_attn_v_spikes_Finish[1][1];
+
+    r_attn_v_spikes_Finish[2][4] <= r_attn_v_spikes_Finish[1][2];
+    r_attn_v_spikes_Finish[2][5] <= r_attn_v_spikes_Finish[1][2];
+    r_attn_v_spikes_Finish[2][6] <= r_attn_v_spikes_Finish[1][3];
+    r_attn_v_spikes_Finish[2][7] <= r_attn_v_spikes_Finish[1][3];
+
+    r_attn_v_spikes_done <= {r_attn_v_spikes_done[1 : 0], w_attn_v_spikes_done};
 end
 
-assign w_TmpSpikesRam01_wea   = r_attn_v_spikes_Finish ? w_Mlp_Ram01_wea   : w_attn_v_spikes_valid ;
-assign w_TmpSpikesRam01_addra = r_attn_v_spikes_Finish ? w_Mlp_Ram01_addra : r_MLP_in_addr         ;
-assign w_TmpSpikesRam01_dina  = r_attn_v_spikes_Finish ? w_Mlp_Ram01_dina  : w_attn_v_spikes_data  ;
+assign w_TmpSpikesRam01_wea   = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_wea   : w_attn_v_spikes_valid ;
+assign w_TmpSpikesRam01_addra = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_addra : r_MLP_in_addr         ;
+assign w_TmpSpikesRam01_dina  = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_dina  : w_attn_v_spikes_data  ;
 
 MLP_hidden_TmpSpikesRam u_MLP_TmpSpikesRam01 (
     .clka               ( s_clk                         ),
