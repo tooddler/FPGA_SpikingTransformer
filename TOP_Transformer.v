@@ -788,9 +788,4 @@ EmbeddedRAM u_MLP_TmpSpikesRam02 (
     .doutb              ( w_Mlp_Ram02_doutb             )  
 );
 
-
-/*
-    todo : r_attn_v_spikes_Finish -> fanout 的问题
-*/
-
 endmodule // TOP_Transformer

@@ -32,8 +32,8 @@ reg  [9 : 0]                     r_lk_wraddr          ;
 reg  [9 : 0]                     r_lv_wraddr          ;
 reg                              r_SpikesTmpRam_Ready ;
 
-// assign o_SpikesTmpRam_Ready = r_SpikesTmpRam_Ready ;
-assign o_SpikesTmpRam_Ready = 1'b1 ; // FIXME: ONLY FOR SIMULATION
+assign o_SpikesTmpRam_Ready = r_SpikesTmpRam_Ready ;
+// assign o_SpikesTmpRam_Ready = 1'b1 ; // FIXME: ONLY FOR SIMULATION
 
 // r_SpikesTmpRam_Ready
 always@(posedge s_clk, posedge s_rst) begin
@@ -67,7 +67,7 @@ always@(posedge s_clk, posedge s_rst) begin
         r_lv_wraddr <= r_lv_wraddr + 1'b1;
 end
 
-qkv_SpikesTmpRam_sim_q Query_SpikesTmpRam (
+qkv_SpikesTmpRam Query_SpikesTmpRam (
     .clka   ( s_clk                 ), 
     .wea    ( i00_spikesLine_valid  ), 
     .addra  ( r_lq_wraddr           ), // [9 : 0] addra
@@ -78,7 +78,7 @@ qkv_SpikesTmpRam_sim_q Query_SpikesTmpRam (
     .doutb  ( o_QueryRam_out        )  // [127 : 0] douta
 );
 
-qkv_SpikesTmpRam_sim_k Key_SpikesTmpRam (
+qkv_SpikesTmpRam Key_SpikesTmpRam (
     .clka   ( s_clk                 ), 
     .wea    ( i01_spikesLine_valid  ), 
     .addra  ( r_lk_wraddr           ), // [9 : 0] addra
@@ -89,7 +89,7 @@ qkv_SpikesTmpRam_sim_k Key_SpikesTmpRam (
     .doutb  ( o_KeyRam_out          )  // [127 : 0] douta
 );
 
-qkv_SpikesTmpRam_sim_v Value_SpikesTmpRam (
+qkv_SpikesTmpRam Value_SpikesTmpRam (
     .clka   ( s_clk                 ), 
     .wea    ( i02_spikesLine_valid  ), 
     .addra  ( r_lv_wraddr           ), // [9 : 0] addra

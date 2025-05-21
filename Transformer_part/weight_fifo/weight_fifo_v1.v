@@ -30,12 +30,16 @@ module weight_fifo_v1 #(
 
 localparam P_MAX_TIMES = `FINAL_FMAPS_CHNNLS * `FINAL_FMAPS_CHNNLS / (32 << $clog2(`DATA_WIDTH / 8)); // 576
 localparam P_MAX_ADDR  = (P_MAX_TIMES - 1) * (32 << $clog2(`DATA_WIDTH / 8));
+localparam P_MAX_ADDR_PROJ_FC = P_MAX_ADDR + P_MAX_ADDR / 3;
+localparam P_MAX_ADDR_MLP_FC0 = P_MAX_ADDR_PROJ_FC + P_MAX_ADDR / 3;
+localparam P_MAX_ADDR_MLP_FC1 = P_MAX_ADDR_MLP_FC0 + P_MAX_ADDR / 3;
 
 wire                                full                   ;
 wire                                empty                  ;
 wire                                w_almost_full          ;
 wire                                w_almost_empty         ;
 reg                                 r_fifo_rst_flag        ;
+reg  [1 : 0]                        r_Read_Addr_Cnt        ; // 64 / 16
 
 // ---> debug dot
 wire [7:0]      debug_weight_array [7:0];
@@ -52,13 +56,60 @@ assign rd_burst_len         =       'd32                   ;
 assign o_weight_ready       =       ~w_almost_empty        ;
 
 // rd_burst_addr
+// always@(posedge s_clk, posedge s_rst) begin
+//     if (s_rst || r_fifo_rst_flag)
+//         rd_burst_addr <= WEIGHTS_BASEADDR;
+//     else if (rd_burst_finish && rd_burst_addr == WEIGHTS_BASEADDR + P_MAX_ADDR)
+//         rd_burst_addr <= WEIGHTS_BASEADDR;
+//     else if (rd_burst_finish)
+//         rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+// end
+
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || r_fifo_rst_flag)
+    if (s_rst || r_fifo_rst_flag) begin
         rd_burst_addr <= WEIGHTS_BASEADDR;
-    else if (rd_burst_finish && rd_burst_addr == WEIGHTS_BASEADDR + P_MAX_ADDR)
-        rd_burst_addr <= WEIGHTS_BASEADDR;
-    else if (rd_burst_finish)
-        rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+        r_Read_Addr_Cnt <= 2'd0;
+    end
+    else if (rd_burst_finish) begin
+        case (rd_burst_addr)
+            WEIGHTS_BASEADDR + P_MAX_ADDR: begin
+                r_Read_Addr_Cnt <= r_Read_Addr_Cnt + 1'b1;
+                
+                if (r_Read_Addr_Cnt == 2'd3)
+                    rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+                else
+                    rd_burst_addr <= WEIGHTS_BASEADDR;
+            end         
+            WEIGHTS_BASEADDR + P_MAX_ADDR_PROJ_FC : begin
+                r_Read_Addr_Cnt <= r_Read_Addr_Cnt + 1'b1;
+                
+                if (r_Read_Addr_Cnt == 2'd3)
+                    rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+                else
+                    rd_burst_addr <= WEIGHTS_BASEADDR + P_MAX_ADDR;
+            end
+            WEIGHTS_BASEADDR + P_MAX_ADDR_MLP_FC0 : begin
+                r_Read_Addr_Cnt <= r_Read_Addr_Cnt + 1'b1;
+                
+                if (r_Read_Addr_Cnt == 2'd3)
+                    rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+                else
+                    rd_burst_addr <= WEIGHTS_BASEADDR + P_MAX_ADDR_PROJ_FC;
+            end
+            WEIGHTS_BASEADDR + P_MAX_ADDR_MLP_FC1 : begin
+                r_Read_Addr_Cnt <= r_Read_Addr_Cnt + 1'b1;
+                
+                if (r_Read_Addr_Cnt == 2'd3)
+                    rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+                else
+                    rd_burst_addr <= WEIGHTS_BASEADDR + P_MAX_ADDR_MLP_FC0;
+            end
+            default : begin
+                rd_burst_addr <= rd_burst_addr + (rd_burst_len << $clog2(`DATA_WIDTH / 8));
+                r_Read_Addr_Cnt <= r_Read_Addr_Cnt;
+            end
+        endcase
+    end
 end
 
 // rd_burst_req 
