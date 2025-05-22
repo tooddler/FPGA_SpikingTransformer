@@ -31,9 +31,9 @@ module weight_fifo_v1 #(
 localparam P_MAX_ADDR  = `FINAL_FMAPS_CHNNLS * `FINAL_FMAPS_CHNNLS;
 
 localparam P_MAX_ADDR_FC_QKV  = WEIGHTS_BASEADDR + P_MAX_ADDR - (32 << $clog2(`DATA_WIDTH / 8));
-localparam P_MAX_ADDR_PROJ_FC = WEIGHTS_BASEADDR + P_MAX_ADDR_FC_QKV + P_MAX_ADDR / 3;
-localparam P_MAX_ADDR_MLP_FC0 = WEIGHTS_BASEADDR + P_MAX_ADDR_PROJ_FC + P_MAX_ADDR * 4 / 3;
-localparam P_MAX_ADDR_MLP_FC1 = WEIGHTS_BASEADDR + P_MAX_ADDR_MLP_FC0 + P_MAX_ADDR * 4 / 3;
+localparam P_MAX_ADDR_PROJ_FC = P_MAX_ADDR_FC_QKV + P_MAX_ADDR / 3;
+localparam P_MAX_ADDR_MLP_FC0 = P_MAX_ADDR_PROJ_FC + P_MAX_ADDR * 4 / 3;
+localparam P_MAX_ADDR_MLP_FC1 = P_MAX_ADDR_MLP_FC0 + P_MAX_ADDR * 4 / 3;
 
 wire                                full                   ;
 wire                                empty                  ;
