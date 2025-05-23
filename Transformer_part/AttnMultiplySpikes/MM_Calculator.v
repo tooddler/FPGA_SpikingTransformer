@@ -253,7 +253,7 @@ end
 
 // o_attn_v_spikes_done
 always@(posedge s_clk) begin
-    if (r_lif_attnv_cnt == 'd3070)
+    if (r_lif_attnv_cnt == 'd3072)
         o_attn_v_spikes_done <= 1'b1;
     else
         o_attn_v_spikes_done <= 1'b0;

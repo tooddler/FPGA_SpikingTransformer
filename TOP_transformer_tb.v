@@ -553,105 +553,105 @@ always@(posedge s_clk) begin
 end
 
 // ======= MLP =======
-// parameter mlp_projfc_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t0.txt";
-// parameter mlp_projfc_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t1.txt";
-// parameter mlp_projfc_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t2.txt";
-// parameter mlp_projfc_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t3.txt";
+parameter mlp_projfc_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t0.txt";
+parameter mlp_projfc_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t1.txt";
+parameter mlp_projfc_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t2.txt";
+parameter mlp_projfc_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_projfc_out_t3.txt";
 
-// integer mlp_projfc_file0, mlp_projfc_file1, mlp_projfc_file2, mlp_projfc_file3;
-// integer mlp_projfc_num;
+integer mlp_projfc_file0, mlp_projfc_file1, mlp_projfc_file2, mlp_projfc_file3;
+integer mlp_projfc_num;
 
-// initial begin
-//     mlp_projfc_file0 = $fopen(mlp_projfc_out_t0_path, "w");
-//     mlp_projfc_file1 = $fopen(mlp_projfc_out_t1_path, "w");
-//     mlp_projfc_file2 = $fopen(mlp_projfc_out_t2_path, "w");
-//     mlp_projfc_file3 = $fopen(mlp_projfc_out_t3_path, "w");
-// end
+initial begin
+    mlp_projfc_file0 = $fopen(mlp_projfc_out_t0_path, "w");
+    mlp_projfc_file1 = $fopen(mlp_projfc_out_t1_path, "w");
+    mlp_projfc_file2 = $fopen(mlp_projfc_out_t2_path, "w");
+    mlp_projfc_file3 = $fopen(mlp_projfc_out_t3_path, "w");
+end
 
-// always@(posedge s_clk) begin
-//     if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 0) begin
-//         $display("mlp projfc cal done");
-//         $fclose(mlp_projfc_file0);
-//         $fclose(mlp_projfc_file1);
-//         $fclose(mlp_projfc_file2);
-//         $fclose(mlp_projfc_file3);
-//     end 
-//     else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 0 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
-//         for (mlp_projfc_num = 0; mlp_projfc_num < 8; mlp_projfc_num = mlp_projfc_num + 1) begin
-//             $fwrite(mlp_projfc_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 0)) & 2'b11);
-//             $fwrite(mlp_projfc_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 2)) & 2'b11);
-//             $fwrite(mlp_projfc_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 4)) & 2'b11);
-//             $fwrite(mlp_projfc_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 6)) & 2'b11);
-//         end
-//     end
-// end
+always@(posedge s_clk) begin
+    if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 0) begin
+        $display("mlp projfc cal done");
+        $fclose(mlp_projfc_file0);
+        $fclose(mlp_projfc_file1);
+        $fclose(mlp_projfc_file2);
+        $fclose(mlp_projfc_file3);
+    end 
+    else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 0 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
+        for (mlp_projfc_num = 0; mlp_projfc_num < 8; mlp_projfc_num = mlp_projfc_num + 1) begin
+            $fwrite(mlp_projfc_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 0)) & 2'b11);
+            $fwrite(mlp_projfc_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 2)) & 2'b11);
+            $fwrite(mlp_projfc_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 4)) & 2'b11);
+            $fwrite(mlp_projfc_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_projfc_num * 8 + 6)) & 2'b11);
+        end
+    end
+end
 
-// parameter mlp_fc0_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t0.txt";
-// parameter mlp_fc0_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t1.txt";
-// parameter mlp_fc0_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t2.txt";
-// parameter mlp_fc0_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t3.txt";
+parameter mlp_fc0_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t0.txt";
+parameter mlp_fc0_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t1.txt";
+parameter mlp_fc0_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t2.txt";
+parameter mlp_fc0_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc0_out_t3.txt";
 
-// integer mlp_fc0_file0, mlp_fc0_file1, mlp_fc0_file2, mlp_fc0_file3;
-// integer mlp_fc0_num;
+integer mlp_fc0_file0, mlp_fc0_file1, mlp_fc0_file2, mlp_fc0_file3;
+integer mlp_fc0_num;
 
-// initial begin
-//     mlp_fc0_file0 = $fopen(mlp_fc0_out_t0_path, "w");
-//     mlp_fc0_file1 = $fopen(mlp_fc0_out_t1_path, "w");
-//     mlp_fc0_file2 = $fopen(mlp_fc0_out_t2_path, "w");
-//     mlp_fc0_file3 = $fopen(mlp_fc0_out_t3_path, "w");
-// end
+initial begin
+    mlp_fc0_file0 = $fopen(mlp_fc0_out_t0_path, "w");
+    mlp_fc0_file1 = $fopen(mlp_fc0_out_t1_path, "w");
+    mlp_fc0_file2 = $fopen(mlp_fc0_out_t2_path, "w");
+    mlp_fc0_file3 = $fopen(mlp_fc0_out_t3_path, "w");
+end
 
-// always@(posedge s_clk) begin
-//     if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 1) begin
-//         $display("mlp fc0 cal done");
-//         $fclose(mlp_fc0_file0);
-//         $fclose(mlp_fc0_file1);
-//         $fclose(mlp_fc0_file2);
-//         $fclose(mlp_fc0_file3);
-//     end 
-//     else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 1 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
-//         for (mlp_fc0_num = 0; mlp_fc0_num < 8; mlp_fc0_num = mlp_fc0_num + 1) begin
-//             $fwrite(mlp_fc0_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 0)) & 2'b11);
-//             $fwrite(mlp_fc0_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 2)) & 2'b11);
-//             $fwrite(mlp_fc0_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 4)) & 2'b11);
-//             $fwrite(mlp_fc0_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 6)) & 2'b11);
-//         end
-//     end
-// end
+always@(posedge s_clk) begin
+    if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 1) begin
+        $display("mlp fc0 cal done");
+        $fclose(mlp_fc0_file0);
+        $fclose(mlp_fc0_file1);
+        $fclose(mlp_fc0_file2);
+        $fclose(mlp_fc0_file3);
+    end 
+    else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 1 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
+        for (mlp_fc0_num = 0; mlp_fc0_num < 8; mlp_fc0_num = mlp_fc0_num + 1) begin
+            $fwrite(mlp_fc0_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 0)) & 2'b11);
+            $fwrite(mlp_fc0_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 2)) & 2'b11);
+            $fwrite(mlp_fc0_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 4)) & 2'b11);
+            $fwrite(mlp_fc0_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc0_num * 8 + 6)) & 2'b11);
+        end
+    end
+end
 
 
-// parameter mlp_fc1_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t0.txt";
-// parameter mlp_fc1_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t1.txt";
-// parameter mlp_fc1_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t2.txt";
-// parameter mlp_fc1_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t3.txt";
+parameter mlp_fc1_out_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t0.txt";
+parameter mlp_fc1_out_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t1.txt";
+parameter mlp_fc1_out_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t2.txt";
+parameter mlp_fc1_out_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/mlp_fc1_out_t3.txt";
 
-// integer mlp_fc1_file0, mlp_fc1_file1, mlp_fc1_file2, mlp_fc1_file3;
-// integer mlp_fc1_num;
+integer mlp_fc1_file0, mlp_fc1_file1, mlp_fc1_file2, mlp_fc1_file3;
+integer mlp_fc1_num;
 
-// initial begin
-//     mlp_fc1_file0 = $fopen(mlp_fc1_out_t0_path, "w");
-//     mlp_fc1_file1 = $fopen(mlp_fc1_out_t1_path, "w");
-//     mlp_fc1_file2 = $fopen(mlp_fc1_out_t2_path, "w");
-//     mlp_fc1_file3 = $fopen(mlp_fc1_out_t3_path, "w");
-// end
+initial begin
+    mlp_fc1_file0 = $fopen(mlp_fc1_out_t0_path, "w");
+    mlp_fc1_file1 = $fopen(mlp_fc1_out_t1_path, "w");
+    mlp_fc1_file2 = $fopen(mlp_fc1_out_t2_path, "w");
+    mlp_fc1_file3 = $fopen(mlp_fc1_out_t3_path, "w");
+end
 
-// always@(posedge s_clk) begin
-//     if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 2) begin
-//         $display("mlp fc1 cal done");
-//         $fclose(mlp_fc1_file0);
-//         $fclose(mlp_fc1_file1);
-//         $fclose(mlp_fc1_file2);
-//         $fclose(mlp_fc1_file3);
-//     end 
-//     else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 2 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
-//         for (mlp_fc1_num = 0; mlp_fc1_num < 8; mlp_fc1_num = mlp_fc1_num + 1) begin
-//             $fwrite(mlp_fc1_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 0)) & 2'b11);
-//             $fwrite(mlp_fc1_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 2)) & 2'b11);
-//             $fwrite(mlp_fc1_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 4)) & 2'b11);
-//             $fwrite(mlp_fc1_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 6)) & 2'b11);
-//         end
-//     end
-// end
+always@(posedge s_clk) begin
+    if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt > 2) begin
+        $display("mlp fc1 cal done");
+        $fclose(mlp_fc1_file0);
+        $fclose(mlp_fc1_file1);
+        $fclose(mlp_fc1_file2);
+        $fclose(mlp_fc1_file3);
+    end 
+    else if (u_TOP_Transformer.u_mlp_controller.r_WriteBack2Ram_LayerCnt == 2 && u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_valid) begin
+        for (mlp_fc1_num = 0; mlp_fc1_num < 8; mlp_fc1_num = mlp_fc1_num + 1) begin
+            $fwrite(mlp_fc1_file0, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 0)) & 2'b11);
+            $fwrite(mlp_fc1_file1, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 2)) & 2'b11);
+            $fwrite(mlp_fc1_file2, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 4)) & 2'b11);
+            $fwrite(mlp_fc1_file3, "%d\n", (u_TOP_Transformer.u_mlp_controller.w_MLPsSpikesOut_data >> (mlp_fc1_num * 8 + 6)) & 2'b11);
+        end
+    end
+end
 
 // ======= CHECK MLP-OUT =======
 parameter before_act_mlp_projfc_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/before_act_mlp_projfc_t0.txt";

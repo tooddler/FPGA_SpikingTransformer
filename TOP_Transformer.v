@@ -725,7 +725,7 @@ mlp_controller u_mlp_controller(
 
 // r_MLP_in_addr    
 always@(posedge s_clk, posedge s_rst) begin
-    if (s_rst || w_attn_v_spikes_done) 
+    if (s_rst) 
         r_MLP_in_addr <= 'd0;
     else if (w_attn_v_spikes_valid)
         r_MLP_in_addr <= r_MLP_in_addr + 1'b1;

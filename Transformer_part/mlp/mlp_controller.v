@@ -177,7 +177,6 @@ always@(posedge s_clk, posedge s_rst) begin
         r_WghtShp_RowCntMax <= 'd0;
         r_WghtShp_ColCntMax <= 'd0;
         r_MLPs_BiasWidth    <= 'd0;
-        r_lif_thrd          <= 'd0;
     end
     else begin
         case(s_curr_state)
@@ -185,32 +184,41 @@ always@(posedge s_clk, posedge s_rst) begin
             r_WghtShp_RowCntMax <= P_WEIGHT_PROJ_FC_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_PROJ_FC_COLMAX;
             r_MLPs_BiasWidth    <= 'd0                    ; // WIDTH = `FINAL_FMAPS_CHNNLS
-            r_lif_thrd          <= 'd128                  ;
         end
         S_CAL_MLP_FC0: begin
             r_WghtShp_RowCntMax <= P_WEIGHT_MLP_FC1_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_MLP_FC1_COLMAX;
             r_MLPs_BiasWidth    <= `FINAL_FMAPS_CHNNLS    ; // WIDTH = `MLP_HIDDEN_WIDTH
-            r_lif_thrd          <= 'd256                  ;
         end
         S_CAL_MLP_FC1: begin
             r_WghtShp_RowCntMax <= P_WEIGHT_MLP_FC2_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_MLP_FC2_COLMAX;
             r_MLPs_BiasWidth    <= `FINAL_FMAPS_CHNNLS + `MLP_HIDDEN_WIDTH ; // WIDTH = `FINAL_FMAPS_CHNNLS
-            r_lif_thrd          <= 'd128                  ;
         end
         S_FETCH_DATA: begin
             r_WghtShp_RowCntMax <= r_WghtShp_RowCntMax;
             r_WghtShp_ColCntMax <= r_WghtShp_ColCntMax;
             r_MLPs_BiasWidth    <= r_MLPs_BiasWidth   ;
-            r_lif_thrd          <= r_lif_thrd         ;
         end
         default: begin
             r_WghtShp_RowCntMax <= 8'hff;
             r_WghtShp_ColCntMax <= 8'hff;
             r_MLPs_BiasWidth    <= r_MLPs_BiasWidth;
-            r_lif_thrd          <= r_lif_thrd;
         end
+        endcase
+    end
+end
+
+// r_lif_thrd
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_lif_thrd <= 'd0;
+    else begin
+        case(r_WriteBack2Ram_LayerCnt)
+            'd0:        r_lif_thrd <= 'd128;
+            'd1:        r_lif_thrd <= 'd256;
+            'd2:        r_lif_thrd <= 'd128;
+            default:    r_lif_thrd <= r_lif_thrd;
         endcase
     end
 end
@@ -227,10 +235,15 @@ always@(posedge s_clk) begin
     r_Mlp_Ram02_doutb <= i_Mlp_Ram02_doutb;
 end
 
+// debug dot
+// wire [63:0] w_debug_indata;
+
 genvar kk;
 generate
     for (kk = 0; kk < 32; kk = kk + 1) begin
         assign w_Mlp_Ram_00add02[kk*2 + 1 : kk*2] = r_Mlp_Ram00_doutb[kk*2 + 1 : kk*2] + r_Mlp_Ram02_doutb[kk*2 + 1 : kk*2];
+    
+        // assign w_debug_indata[kk*2 + 1 : kk*2] = 2'b01;
     end
 endgenerate
 
@@ -240,7 +253,7 @@ always@(posedge s_clk, posedge s_rst) begin
         r_Mtrx_slice_data <= 'd0;
     else begin
         case(r_fcLayer_Cnt)
-            'd0, 'd2:   r_Mtrx_slice_data <= r_Mlp_Ram01_doutb;
+            'd0, 'd2:   r_Mtrx_slice_data <= r_Mlp_Ram01_doutb; // w_debug_indata; 
             'd1:        r_Mtrx_slice_data <= w_Mlp_Ram_00add02;
             default:    r_Mtrx_slice_data <= r_Mtrx_slice_data;
         endcase
