@@ -29,6 +29,10 @@ module mlp_controller (
     output  [63 : 0]                              o_Mlp_Ram02_dina      ,
     output  [11 : 0]                              o_Mlp_Ram02_addrb     , // rd
     input   [63 : 0]                              i_Mlp_Ram02_doutb     ,
+    // x + attn(x) - RAM interface
+    output                                        o_Mlp_Ram03_wea       ,
+    output  [11 : 0]                              o_Mlp_Ram03_addra     ,
+    output  [63 : 0]                              o_Mlp_Ram03_dina      ,
     // send to systolic array
     output reg                                    o_Init_PrepareData    , // init 
     // - array q
@@ -132,7 +136,7 @@ reg  [$clog2(`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM) - 1 : 0] r_PsumFIFO_cnt   
 
 reg  [11 : 0]                                                  r_ROM_addra             ;
 reg  [11 : 0]                                                  r_ROM_BaseAddra         ;
-reg  [3 : 0]                                                   r_ROM_Cnt               ;
+// reg  [9 : 0]                                                   r_ROM_Cnt               ;
 reg  [11 : 0]                                                  r_MLPs_BiasWidth        ;
 
 reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                            r00_PsumFIFO_Data       ;
@@ -176,34 +180,28 @@ always@(posedge s_clk, posedge s_rst) begin
     if (s_rst) begin
         r_WghtShp_RowCntMax <= 'd0;
         r_WghtShp_ColCntMax <= 'd0;
-        r_MLPs_BiasWidth    <= 'd0;
     end
     else begin
         case(s_curr_state)
         S_CAL_PROJ_FC: begin
             r_WghtShp_RowCntMax <= P_WEIGHT_PROJ_FC_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_PROJ_FC_COLMAX;
-            r_MLPs_BiasWidth    <= 'd0                    ; // WIDTH = `FINAL_FMAPS_CHNNLS
         end
         S_CAL_MLP_FC0: begin
             r_WghtShp_RowCntMax <= P_WEIGHT_MLP_FC1_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_MLP_FC1_COLMAX;
-            r_MLPs_BiasWidth    <= `FINAL_FMAPS_CHNNLS    ; // WIDTH = `MLP_HIDDEN_WIDTH
         end
         S_CAL_MLP_FC1: begin
             r_WghtShp_RowCntMax <= P_WEIGHT_MLP_FC2_ROWMAX;
             r_WghtShp_ColCntMax <= P_WEIGHT_MLP_FC2_COLMAX;
-            r_MLPs_BiasWidth    <= `FINAL_FMAPS_CHNNLS + `MLP_HIDDEN_WIDTH ; // WIDTH = `FINAL_FMAPS_CHNNLS
         end
         S_FETCH_DATA: begin
             r_WghtShp_RowCntMax <= r_WghtShp_RowCntMax;
             r_WghtShp_ColCntMax <= r_WghtShp_ColCntMax;
-            r_MLPs_BiasWidth    <= r_MLPs_BiasWidth   ;
         end
         default: begin
             r_WghtShp_RowCntMax <= 8'hff;
             r_WghtShp_ColCntMax <= 8'hff;
-            r_MLPs_BiasWidth    <= r_MLPs_BiasWidth;
         end
         endcase
     end
@@ -326,9 +324,9 @@ always@(posedge s_clk) begin
         r_WriteBack2Ram_BaseAddr_delay <= r_WriteBack2Ram_BaseAddr_delay;
 end
 
-assign o_Mlp_Ram00_wea   = (r_fcLayer_Cnt_delay == 'd1) ? r_Mtrx_slice_valid      : 'd0;
-assign o_Mlp_Ram00_addra = (r_fcLayer_Cnt_delay == 'd1) ? r_RamRead_Addr_delay[2] : 'd0;
-assign o_Mlp_Ram00_dina  = (r_fcLayer_Cnt_delay == 'd1) ? r_Mtrx_slice_data       : 'd0;
+assign o_Mlp_Ram03_wea   = (r_fcLayer_Cnt_delay == 'd1) ? r_Mtrx_slice_valid      : 'd0;
+assign o_Mlp_Ram03_addra = (r_fcLayer_Cnt_delay == 'd1) ? r_RamRead_Addr_delay[2] : 'd0;
+assign o_Mlp_Ram03_dina  = (r_fcLayer_Cnt_delay == 'd1) ? r_Mtrx_slice_data       : 'd0;
 
 assign o_Mlp_Ram01_wea   = (r_WriteBack2Ram_LayerCnt == 'd1) ? w_MLPsSpikesOut_valid : 'd0;
 assign o_Mlp_Ram01_addra = (r_WriteBack2Ram_LayerCnt == 'd1) ? r_WriteBack2Ram_Addr  : 'd0;
@@ -521,21 +519,36 @@ always@(posedge s_clk) begin
     r_PsumFIFO_Valid_dly <= {r_PsumFIFO_Valid_dly[1 : 0], r_PsumFIFO_Valid};
 end
 
-// r_ROM_Cnt
+// --------------- Bias ROM part --------------- \\
+// // r_ROM_Cnt
+// always@(posedge s_clk, posedge s_rst) begin
+//     if (s_rst)
+//         r_ROM_Cnt <= 'd0;
+//     else if (r_ROM_Cnt == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
+//         r_ROM_Cnt <= 'd0;
+//     else if ((&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
+//         r_ROM_Cnt <= r_ROM_Cnt + 1'b1;
+// end
+
+// r_MLPs_BiasWidth
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
-        r_ROM_Cnt <= 'd0;
-    else if (r_PsumFIFO_Valid && r_ROM_addra[3 : 0] == 4'hF)
-        r_ROM_Cnt <= r_ROM_Cnt + 1'b1;
+        r_MLPs_BiasWidth <= 'd0;
+    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111) begin
+        if (r_MLPs_BiasWidth == 'd0)
+            r_MLPs_BiasWidth <= `FINAL_FMAPS_CHNNLS;
+        else if (r_MLPs_BiasWidth == `FINAL_FMAPS_CHNNLS)
+            r_MLPs_BiasWidth <= `FINAL_FMAPS_CHNNLS + `MLP_HIDDEN_WIDTH;
+    end
 end
 
 // r_ROM_BaseAddra
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_ROM_BaseAddra <= 'd0;
-    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_RowCntMax - 1 && r_ROM_Cnt == 4'hF && r_ROM_addra[3 : 0] == 4'b0111)
+    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
         r_ROM_BaseAddra <= 'd0;
-    else if (r_ROM_Cnt == 4'hF && r_ROM_addra[3 : 0] == 4'b0111)
+    else if ((&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
         r_ROM_BaseAddra <= r_ROM_BaseAddra + 'd16;
 end
 
@@ -543,17 +556,17 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_ROM_addra <= 'd0;
-    else if (r_PsumFIFO_Valid && r_ROM_addra[3 : 0] == 4'hF)
+    else if (&r_PsumFIFO_cnt)
         r_ROM_addra <= r_ROM_BaseAddra + r_MLPs_BiasWidth;
-    else if (r_PsumFIFO_Valid)
+    else if (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0])
         r_ROM_addra <= r_ROM_addra + 1'b1;
 end
 
-// AddTree Generator
-assign w_AddTree_datain[0] = {r00_PsumFIFO_Data[20*1 - 1 : 20*0], r01_PsumFIFO_Data[20*1 - 1 : 20*0], r02_PsumFIFO_Data[20*1 - 1 : 20*0], w_ROM_bias_out_ext};
-assign w_AddTree_datain[1] = {r00_PsumFIFO_Data[20*2 - 1 : 20*1], r01_PsumFIFO_Data[20*2 - 1 : 20*1], r02_PsumFIFO_Data[20*2 - 1 : 20*1], w_ROM_bias_out_ext};
-assign w_AddTree_datain[2] = {r00_PsumFIFO_Data[20*3 - 1 : 20*2], r01_PsumFIFO_Data[20*3 - 1 : 20*2], r02_PsumFIFO_Data[20*3 - 1 : 20*2], w_ROM_bias_out_ext};
-assign w_AddTree_datain[3] = {r00_PsumFIFO_Data[20*4 - 1 : 20*3], r01_PsumFIFO_Data[20*4 - 1 : 20*3], r02_PsumFIFO_Data[20*4 - 1 : 20*3], w_ROM_bias_out_ext};
+MLPs_bias_Rom u_MLPs_bias_Rom (
+    .clka                   ( s_clk                                 ), 
+    .addra                  ( r_ROM_addra                           ),  // [11 : 0] addra
+    .douta                  ( w_ROM_bias_out                        )   // [15 : 0] douta
+);
 
 // ------------ debug dot
 wire [19:0] w_debug_r00_PsumFIFO_Data_t0;
@@ -590,7 +603,6 @@ generate
     end
 endgenerate
 
-
 assign w_debug_r00_PsumFIFO_Data_t0 = r00_PsumFIFO_Data[20*1 - 1 : 20*0] ;
 assign w_debug_r00_PsumFIFO_Data_t1 = r00_PsumFIFO_Data[20*2 - 1 : 20*1] ;
 assign w_debug_r00_PsumFIFO_Data_t2 = r00_PsumFIFO_Data[20*3 - 1 : 20*2] ;
@@ -616,8 +628,14 @@ assign w_debug_treeout_t1 = w_AddTree_dataout[22*2 - 1 : 22*1] ;
 assign w_debug_treeout_t2 = w_AddTree_dataout[22*3 - 1 : 22*2] ;
 assign w_debug_treeout_t3 = w_AddTree_dataout[22*4 - 1 : 22*3] ;
 
-// ------------ end debug dot
+// // ------------ end debug dot
 
+// --------------- AddTree --------------- \\
+// AddTree Generator
+assign w_AddTree_datain[0] = {r00_PsumFIFO_Data[20*1 - 1 : 20*0], r01_PsumFIFO_Data[20*1 - 1 : 20*0], r02_PsumFIFO_Data[20*1 - 1 : 20*0], w_ROM_bias_out_ext};
+assign w_AddTree_datain[1] = {r00_PsumFIFO_Data[20*2 - 1 : 20*1], r01_PsumFIFO_Data[20*2 - 1 : 20*1], r02_PsumFIFO_Data[20*2 - 1 : 20*1], w_ROM_bias_out_ext};
+assign w_AddTree_datain[2] = {r00_PsumFIFO_Data[20*3 - 1 : 20*2], r01_PsumFIFO_Data[20*3 - 1 : 20*2], r02_PsumFIFO_Data[20*3 - 1 : 20*2], w_ROM_bias_out_ext};
+assign w_AddTree_datain[3] = {r00_PsumFIFO_Data[20*4 - 1 : 20*3], r01_PsumFIFO_Data[20*4 - 1 : 20*3], r02_PsumFIFO_Data[20*4 - 1 : 20*3], w_ROM_bias_out_ext};
 
 genvar t;
 generate
@@ -636,11 +654,6 @@ generate
     end
 endgenerate
 
-MLPs_bias_Rom u_MLPs_bias_Rom (
-    .clka                   ( s_clk                                 ), 
-    .addra                  ( r_ROM_addra                           ),  // [11 : 0] addra
-    .douta                  ( w_ROM_bias_out                        )   // [15 : 0] douta
-);
 
 // --------------- Active and Reshape Proc --------------- \\
 genvar ee;

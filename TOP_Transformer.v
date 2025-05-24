@@ -167,6 +167,12 @@ wire [63 : 0]                                            w_Mlp_Ram02_dina       
 wire [11 : 0]                                            w_Mlp_Ram02_addrb          ;  
 wire [63 : 0]                                            w_Mlp_Ram02_doutb          ;  
 
+wire [0 : 0]                                             w_Mlp_Ram03_wea            ;  
+wire [11 : 0]                                            w_Mlp_Ram03_addra          ;  
+wire [63 : 0]                                            w_Mlp_Ram03_dina           ;  
+wire [11 : 0]                                            w_Mlp_Ram03_addrb          ;  
+wire [63 : 0]                                            w_Mlp_Ram03_doutb          ;  
+
 wire                                                     w_mlp_Init_PrepareData     ;  
 
 wire                                                     w_mlp_Mtrx00_slice_valid   ;  
@@ -690,6 +696,10 @@ mlp_controller u_mlp_controller(
     .o_Mlp_Ram02_addrb     ( w_Mlp_Ram02_addrb                  ),
     .i_Mlp_Ram02_doutb     ( w_Mlp_Ram02_doutb                  ),
 
+    .o_Mlp_Ram03_wea       ( w_Mlp_Ram03_wea                    ),
+    .o_Mlp_Ram03_addra     ( w_Mlp_Ram03_addra                  ),
+    .o_Mlp_Ram03_dina      ( w_Mlp_Ram03_dina                   ),
+
     .o_Init_PrepareData    ( w_mlp_Init_PrepareData             ),
 
     .o_Mtrx00_slice_valid  ( w_mlp_Mtrx00_slice_valid           ),
@@ -786,6 +796,17 @@ EmbeddedRAM u_MLP_TmpSpikesRam02 (
     .clkb               ( s_clk                         ),
     .addrb              ( w_Mlp_Ram02_addrb             ),  // [11 : 0]
     .doutb              ( w_Mlp_Ram02_doutb             )  
+);
+
+EmbeddedRAM u_MLP_TmpSpikesRam03 (
+    .clka               ( s_clk                         ),
+    .wea                ( w_Mlp_Ram03_wea               ), 
+    .addra              ( w_Mlp_Ram03_addra             ), 
+    .dina               ( w_Mlp_Ram03_dina              ), 
+
+    .clkb               ( s_clk                         ),
+    .addrb              ( w_Mlp_Ram03_addrb             ),  // [11 : 0]
+    .doutb              ( w_Mlp_Ram03_doutb             )  
 );
 
 endmodule // TOP_Transformer
