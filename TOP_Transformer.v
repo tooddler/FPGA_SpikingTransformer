@@ -235,6 +235,8 @@ wire [`SYSTOLIC_UNIT_NUM - 1 : 0]                        w_Ary02_PsumFIFO_Grant 
 wire                                                     w_Ary02_PsumFIFO_Valid     ; 
 wire [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                      w_Ary02_PsumFIFO_Data      ;
 
+wire                                                     w_mlp_MLP_Calc_Done        ;
+
 // -- reg -- 
 reg                                                      r_Chnnl_Switch=0           ;
 reg  [13 : 0]                                            r_MLP_in_addr              ; 
@@ -730,7 +732,9 @@ mlp_controller u_mlp_controller(
     .o02_PsumFIFO_Grant    ( w02_mlp_PsumFIFO_Grant             ),
     .o02_PsumFIFO_Valid    ( w02_mlp_PsumFIFO_Valid             ),
     .i02_PsumFIFO_Data     ( w02_mlp_PsumFIFO_Data              ),
-    .i02_Finish_Calc       ( w02_mlp_Finish_Calc                ) 
+    .i02_Finish_Calc       ( w02_mlp_Finish_Calc                ),
+
+    .o_MLP_Calc_Done       ( w_mlp_MLP_Calc_Done                ) 
 );
 
 // r_MLP_in_addr    
@@ -776,6 +780,40 @@ assign w_TmpSpikesRam01_wea   = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_wea  
 assign w_TmpSpikesRam01_addra = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_addra : r_MLP_in_addr         ;
 assign w_TmpSpikesRam01_dina  = r_attn_v_spikes_Finish[0][0] ? w_Mlp_Ram01_dina  : w_attn_v_spikes_data  ;
 
+
+// unstable version
+reg  [11 : 0] r_Mlp_read_addr;
+reg  [11 : 0] r_Mlp_read_addr_d0;
+reg           r_Mlp_read_valid;
+reg           r_Mlp_read_valid_delay;
+
+// r_Mlp_read_addr
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_Mlp_read_addr <= 'd0;
+    else if (r_Mlp_read_valid)
+        r_Mlp_read_addr <= r_Mlp_read_addr + 1'b1;
+end
+
+// r_Mlp_read_valid
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_Mlp_read_valid <= 1'b0;
+    else if (r_Mlp_read_addr == 'd3071 || r_Mlp_read_addr == 'd3072)
+        r_Mlp_read_valid <= 1'b0;
+    else if (w_mlp_MLP_Calc_Done)
+        r_Mlp_read_valid <= 1'b1;
+end
+
+// r_Mlp_read_valid_delay
+always@(posedge s_clk) begin 
+    r_Mlp_read_valid_delay <= r_Mlp_read_valid;
+    r_Mlp_read_addr_d0 <= r_Mlp_read_addr;
+end
+
+assign w_Mlp_Ram03_addrb = r_Mlp_read_addr;
+
+
 MLP_hidden_TmpSpikesRam u_MLP_TmpSpikesRam01 (
     .clka               ( s_clk                         ),
     .wea                ( w_TmpSpikesRam01_wea          ),
@@ -808,5 +846,7 @@ EmbeddedRAM u_MLP_TmpSpikesRam03 (
     .addrb              ( w_Mlp_Ram03_addrb             ),  // [11 : 0]
     .doutb              ( w_Mlp_Ram03_doutb             )  
 );
+
+
 
 endmodule // TOP_Transformer

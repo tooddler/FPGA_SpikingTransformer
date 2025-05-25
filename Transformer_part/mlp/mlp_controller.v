@@ -65,7 +65,9 @@ module mlp_controller (
     output wire [`SYSTOLIC_UNIT_NUM - 1 : 0]      o02_PsumFIFO_Grant    , // ch - 2
     output wire                                   o02_PsumFIFO_Valid    ,
     input       [`SYSTOLIC_PSUM_WIDTH - 1 : 0]    i02_PsumFIFO_Data     ,
-    input                                         i02_Finish_Calc       
+    input                                         i02_Finish_Calc       ,
+
+    output wire                                   o_MLP_Calc_Done      
 );
 
 // --- localparam ---
@@ -136,7 +138,6 @@ reg  [$clog2(`SYSTOLIC_UNIT_NUM * `SYSTOLIC_UNIT_NUM) - 1 : 0] r_PsumFIFO_cnt   
 
 reg  [11 : 0]                                                  r_ROM_addra             ;
 reg  [11 : 0]                                                  r_ROM_BaseAddra         ;
-// reg  [9 : 0]                                                   r_ROM_Cnt               ;
 reg  [11 : 0]                                                  r_MLPs_BiasWidth        ;
 
 reg  [`SYSTOLIC_PSUM_WIDTH - 1 : 0]                            r00_PsumFIFO_Data       ;
@@ -158,6 +159,8 @@ reg  [1 : 0]                                                   r_WriteBack2Ram_L
 
 reg  [13 : 0]                                                  r_RamRead_Addr_delay  [2 : 0] ;
 
+reg                                                            r_MLP_Calc_Done         ;
+
 // --------------- state --------------- \\ 
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
@@ -167,6 +170,15 @@ always@(posedge s_clk, posedge s_rst) begin
 end
 
 // --------------- Basic Logic Proc --------------- \\ 
+assign o_MLP_Calc_Done = r_MLP_Calc_Done;
+// r_MLP_Calc_Done
+always@(posedge s_clk, posedge s_rst) begin
+    if (s_rst)
+        r_MLP_Calc_Done <= 'd0;
+    else if (r_fcLayer_Cnt == 'd3 && s_curr_state == S_INIT)
+        r_MLP_Calc_Done <= 1'b1;
+end
+
 // o_Init_PrepareData
 always@(posedge s_clk) begin
     if (s_curr_state == S_INIT)
@@ -233,15 +245,10 @@ always@(posedge s_clk) begin
     r_Mlp_Ram02_doutb <= i_Mlp_Ram02_doutb;
 end
 
-// debug dot
-// wire [63:0] w_debug_indata;
-
 genvar kk;
 generate
     for (kk = 0; kk < 32; kk = kk + 1) begin
         assign w_Mlp_Ram_00add02[kk*2 + 1 : kk*2] = r_Mlp_Ram00_doutb[kk*2 + 1 : kk*2] + r_Mlp_Ram02_doutb[kk*2 + 1 : kk*2];
-    
-        // assign w_debug_indata[kk*2 + 1 : kk*2] = 2'b01;
     end
 endgenerate
 
@@ -251,7 +258,7 @@ always@(posedge s_clk, posedge s_rst) begin
         r_Mtrx_slice_data <= 'd0;
     else begin
         case(r_fcLayer_Cnt)
-            'd0, 'd2:   r_Mtrx_slice_data <= r_Mlp_Ram01_doutb; // w_debug_indata; 
+            'd0, 'd2:   r_Mtrx_slice_data <= r_Mlp_Ram01_doutb;
             'd1:        r_Mtrx_slice_data <= w_Mlp_Ram_00add02;
             default:    r_Mtrx_slice_data <= r_Mtrx_slice_data;
         endcase
@@ -456,7 +463,7 @@ assign o01_PsumFIFO_Grant = r_PsumFIFO_Grant ;
 assign o01_PsumFIFO_Valid = r_PsumFIFO_Valid ;
 assign o02_PsumFIFO_Grant = r_PsumFIFO_Grant ;
 assign o02_PsumFIFO_Valid = r_PsumFIFO_Valid ;
-assign w_ROM_bias_out_ext = { {(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 16){w_ROM_bias_out[15]} }, w_ROM_bias_out};
+assign w_ROM_bias_out_ext = 'd0;// {{(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 16){w_ROM_bias_out[15]} }, w_ROM_bias_out};
 
 // r_fcLayer_Cnt
 always@(posedge s_clk, posedge s_rst) begin
@@ -520,21 +527,14 @@ always@(posedge s_clk) begin
 end
 
 // --------------- Bias ROM part --------------- \\
-// // r_ROM_Cnt
-// always@(posedge s_clk, posedge s_rst) begin
-//     if (s_rst)
-//         r_ROM_Cnt <= 'd0;
-//     else if (r_ROM_Cnt == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
-//         r_ROM_Cnt <= 'd0;
-//     else if ((&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
-//         r_ROM_Cnt <= r_ROM_Cnt + 1'b1;
-// end
-
 // r_MLPs_BiasWidth
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_MLPs_BiasWidth <= 'd0;
-    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111) begin
+    else if (r_WriteBack2Ram_BaseAddr == 2 * `FINAL_FMAPS_WIDTH / `SYSTOLIC_UNIT_NUM - 2
+            && r_ROM_BaseAddra[11 : 4] == r_WghtShp_ColCntMax - 1 
+            && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) 
+            && r_ROM_addra[3 : 0] == 4'b0111) begin
         if (r_MLPs_BiasWidth == 'd0)
             r_MLPs_BiasWidth <= `FINAL_FMAPS_CHNNLS;
         else if (r_MLPs_BiasWidth == `FINAL_FMAPS_CHNNLS)
@@ -546,7 +546,7 @@ end
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
         r_ROM_BaseAddra <= 'd0;
-    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_RowCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
+    else if (r_ROM_BaseAddra[11 : 4] == r_WghtShp_ColCntMax - 1 && (&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
         r_ROM_BaseAddra <= 'd0;
     else if ((&r_PsumFIFO_cnt[$clog2(`SYSTOLIC_UNIT_NUM) - 1 : 0]) && r_ROM_addra[3 : 0] == 4'b0111)
         r_ROM_BaseAddra <= r_ROM_BaseAddra + 'd16;

@@ -744,4 +744,39 @@ always@(posedge s_clk) begin
     end
 end
 
+// ======== Read input + proj_fc data ========
+parameter input_add_projfc_t0_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/input_add_projfc_t0.txt";
+parameter input_add_projfc_t1_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/input_add_projfc_t1.txt";
+parameter input_add_projfc_t2_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/input_add_projfc_t2.txt";
+parameter input_add_projfc_t3_path = "E:/Desktop/spiking-transformer-master/data4fpga_bin/input_add_projfc_t3.txt";
+
+integer input_add_projfc_file0, input_add_projfc_file1, input_add_projfc_file2, input_add_projfc_file3;
+integer input_add_projfc_num;
+
+initial begin
+    input_add_projfc_file0 = $fopen(input_add_projfc_t0_path, "w");
+    input_add_projfc_file1 = $fopen(input_add_projfc_t1_path, "w");
+    input_add_projfc_file2 = $fopen(input_add_projfc_t2_path, "w");
+    input_add_projfc_file3 = $fopen(input_add_projfc_t3_path, "w");
+end
+
+always@(posedge s_clk) begin
+    if (u_TOP_Transformer.r_Mlp_read_addr_d0 == 3072) begin
+        $display("input add projfc cal done");
+        $fclose(input_add_projfc_file0);
+        $fclose(input_add_projfc_file1);
+        $fclose(input_add_projfc_file2);
+        $fclose(input_add_projfc_file3);
+    end
+    else if (u_TOP_Transformer.r_Mlp_read_valid_delay) begin
+        for (input_add_projfc_num = 0; input_add_projfc_num < 8; input_add_projfc_num = input_add_projfc_num + 1) begin
+            $fwrite(input_add_projfc_file0, "%d\n", (u_TOP_Transformer.w_Mlp_Ram03_doutb >> (input_add_projfc_num * 8 + 0)) & 2'b11);
+            $fwrite(input_add_projfc_file1, "%d\n", (u_TOP_Transformer.w_Mlp_Ram03_doutb >> (input_add_projfc_num * 8 + 2)) & 2'b11);
+            $fwrite(input_add_projfc_file2, "%d\n", (u_TOP_Transformer.w_Mlp_Ram03_doutb >> (input_add_projfc_num * 8 + 4)) & 2'b11);
+            $fwrite(input_add_projfc_file3, "%d\n", (u_TOP_Transformer.w_Mlp_Ram03_doutb >> (input_add_projfc_num * 8 + 6)) & 2'b11);
+        end
+    end
+end
+
+
 endmodule

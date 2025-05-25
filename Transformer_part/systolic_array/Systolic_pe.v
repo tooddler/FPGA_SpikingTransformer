@@ -124,7 +124,7 @@ always@(posedge s_clk) begin
             'd0:        r_multidata_T0 <= 'd0;
             'd1:        r_multidata_T0 <= w_weight_T0;
             'd2:        r_multidata_T0 <= w_weight_T0 <<< 1;
-            'd3:        r_multidata_T0 <= $signed(w_weight_T0 <<< 1) + $signed(w_weight_T0);
+            'd3:        r_multidata_T0 <= $signed({w_weight_T0, 1'b0}) + $signed({{2{w_weight_T0[`SYSTOLIC_WEIGHT_WIDTH - 1]}}, w_weight_T0});// $signed(w_weight_T0 <<< 1) + $signed(w_weight_T0);
             default:    r_multidata_T0 <= r_multidata_T0;
         endcase
     else
@@ -138,7 +138,7 @@ always@(posedge s_clk) begin
             'd0:        r_multidata_T1 <= 'd0;
             'd1:        r_multidata_T1 <= w_weight_T1;
             'd2:        r_multidata_T1 <= w_weight_T1 <<< 1;
-            'd3:        r_multidata_T1 <= $signed(w_weight_T1 <<< 1) + $signed(w_weight_T1);
+            'd3:        r_multidata_T1 <= $signed({w_weight_T1, 1'b0}) + $signed({{2{w_weight_T1[`SYSTOLIC_WEIGHT_WIDTH - 1]}}, w_weight_T1});
             default:    r_multidata_T1 <= r_multidata_T1;
         endcase
     else
@@ -152,7 +152,7 @@ always@(posedge s_clk) begin
             'd0:        r_multidata_T2 <= 'd0;
             'd1:        r_multidata_T2 <= w_weight_T2;
             'd2:        r_multidata_T2 <= w_weight_T2 <<< 1;
-            'd3:        r_multidata_T2 <= $signed(w_weight_T2 <<< 1) + $signed(w_weight_T2);
+            'd3:        r_multidata_T2 <= $signed({w_weight_T2, 1'b0}) + $signed({{2{w_weight_T2[`SYSTOLIC_WEIGHT_WIDTH - 1]}}, w_weight_T2});
             default:    r_multidata_T2 <= r_multidata_T2;
         endcase
     else
@@ -166,7 +166,7 @@ always@(posedge s_clk) begin
             'd0:        r_multidata_T3 <= 'd0;
             'd1:        r_multidata_T3 <= w_weight_T3;
             'd2:        r_multidata_T3 <= w_weight_T3 <<< 1;
-            'd3:        r_multidata_T3 <= $signed(w_weight_T3 <<< 1) + $signed(w_weight_T3);
+            'd3:        r_multidata_T3 <= $signed({w_weight_T3, 1'b0}) + $signed({{2{w_weight_T3[`SYSTOLIC_WEIGHT_WIDTH - 1]}}, w_weight_T3});
             default:    r_multidata_T3 <= r_multidata_T3;
         endcase
     else
