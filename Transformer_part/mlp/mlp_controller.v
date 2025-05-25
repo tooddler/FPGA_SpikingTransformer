@@ -463,7 +463,7 @@ assign o01_PsumFIFO_Grant = r_PsumFIFO_Grant ;
 assign o01_PsumFIFO_Valid = r_PsumFIFO_Valid ;
 assign o02_PsumFIFO_Grant = r_PsumFIFO_Grant ;
 assign o02_PsumFIFO_Valid = r_PsumFIFO_Valid ;
-assign w_ROM_bias_out_ext = 'd0;// {{(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 16){w_ROM_bias_out[15]} }, w_ROM_bias_out};
+assign w_ROM_bias_out_ext = {{(`SYSTOLIC_PSUM_WIDTH / `TIME_STEPS - 16){w_ROM_bias_out[15]} }, w_ROM_bias_out};
 
 // r_fcLayer_Cnt
 always@(posedge s_clk, posedge s_rst) begin
