@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "hyper_para.v"
+`include "../hyper_para.v"
 module TOP_Transformer (
     input                                                       s_clk                ,
     input                                                       s_rst                ,

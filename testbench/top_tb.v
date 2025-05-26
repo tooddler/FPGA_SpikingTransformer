@@ -5,7 +5,7 @@
 */
 `timescale 1ns / 1ps
 
-`include "hyper_para.v"
+`include "../hyper_para.v"
 module top_tb ();
 
 reg         s_clk                   ;

@@ -287,16 +287,17 @@ aq_axi_master u_aq_axi_master_ConvWeightsLoad (
     .M_AXI_RVALID                (m00_axi_rvalid                            ),
     .M_AXI_RREADY                (m00_axi_rready                            ),
 
-    .MASTER_RST                  (1'b0                                      ), // not used write port
-    .WR_START                    (1'b0                                      ),
-    .WR_ADRS                     ({burst_read_addr,3'd0}                    ),
-    .WR_LEN                      ({burst_read_len,3'd0}                     ),
+    .MASTER_RST                  ( 1'b0                                     ), // not used write port
+    
+    .WR_START                    ( 1'b0                                     ),
+    .WR_ADRS                     ( 'd0                                      ),
+    .WR_LEN                      ( 'd0                                      ),
     .WR_READY                    (                                          ),
-    .WR_FIFO_RE                  (burst_read_valid                          ),
-    .WR_FIFO_EMPTY               (1'b0                                      ),
-    .WR_FIFO_AEMPTY              (1'b0                                      ),
-    .WR_FIFO_DATA                (burst_read_data                           ),
-    .WR_DONE                     (burst_read_finish                         ),
+    .WR_FIFO_RE                  (                                          ),
+    .WR_FIFO_EMPTY               ( 1'b0                                     ),
+    .WR_FIFO_AEMPTY              ( 1'b0                                     ),
+    .WR_FIFO_DATA                ( 'd0                                      ),
+    .WR_DONE                     (                                          ),
 
     .RD_START                    (burst_read_req                            ),
     .RD_ADRS                     ({burst_read_addr,3'd0}                    ),
@@ -357,16 +358,16 @@ aq_axi_master u_aq_axi_master_WeightsQuery (
     .M_AXI_RVALID                (m01_axi_rvalid                            ),
     .M_AXI_RREADY                (m01_axi_rready                            ),
 
-    .MASTER_RST                  (1'b0                                      ), // not used write port
-    .WR_START                    (1'b0                                      ),
-    .WR_ADRS                     ({M_lq_rd_burst_addr,3'd0}                 ),
-    .WR_LEN                      ({M_lq_rd_burst_len,3'd0}                  ),
+    .MASTER_RST                  ( 1'b0                                     ), // not used write port
+    .WR_START                    ( 1'b0                                     ),
+    .WR_ADRS                     ( 'd0                                      ),
+    .WR_LEN                      ( 'd0                                      ),
     .WR_READY                    (                                          ),
-    .WR_FIFO_RE                  (M_lq_rd_burst_valid                       ),
-    .WR_FIFO_EMPTY               (1'b0                                      ),
-    .WR_FIFO_AEMPTY              (1'b0                                      ),
-    .WR_FIFO_DATA                (M_lq_rd_burst_data                        ),
-    .WR_DONE                     (M_lq_rd_burst_finish                      ),
+    .WR_FIFO_RE                  (                                          ),
+    .WR_FIFO_EMPTY               ( 1'b0                                     ),
+    .WR_FIFO_AEMPTY              ( 1'b0                                     ),
+    .WR_FIFO_DATA                ( 'd0                                      ),
+    .WR_DONE                     (                                          ),
 
     .RD_START                    (M_lq_rd_burst_req                         ),
     .RD_ADRS                     ({M_lq_rd_burst_addr,3'd0}                 ),
@@ -427,16 +428,16 @@ aq_axi_master u_aq_axi_master_WeightsKey (
     .M_AXI_RVALID                (m02_axi_rvalid                            ),
     .M_AXI_RREADY                (m02_axi_rready                            ),
 
-    .MASTER_RST                  (1'b0                                      ), // not used write port
-    .WR_START                    (1'b0                                      ),
-    .WR_ADRS                     ({M_lk_rd_burst_addr,3'd0}                 ),
-    .WR_LEN                      ({M_lk_rd_burst_len,3'd0}                  ),
+    .MASTER_RST                  ( 1'b0                                     ), // not used write port
+    .WR_START                    ( 1'b0                                     ),
+    .WR_ADRS                     ( 'd0                                      ),
+    .WR_LEN                      ( 'd0                                      ),
     .WR_READY                    (                                          ),
-    .WR_FIFO_RE                  (M_lk_rd_burst_valid                       ),
-    .WR_FIFO_EMPTY               (1'b0                                      ),
-    .WR_FIFO_AEMPTY              (1'b0                                      ),
-    .WR_FIFO_DATA                (M_lk_rd_burst_data                        ),
-    .WR_DONE                     (M_lk_rd_burst_finish                      ),
+    .WR_FIFO_RE                  (                                          ),
+    .WR_FIFO_EMPTY               ( 1'b0                                     ),
+    .WR_FIFO_AEMPTY              ( 1'b0                                     ),
+    .WR_FIFO_DATA                ( 'd0                                      ),
+    .WR_DONE                     (                                          ),
 
     .RD_START                    (M_lk_rd_burst_req                         ),
     .RD_ADRS                     ({M_lk_rd_burst_addr,3'd0}                 ),
@@ -497,16 +498,16 @@ aq_axi_master u_aq_axi_master_WeightsValue (
     .M_AXI_RVALID                (m03_axi_rvalid                            ),
     .M_AXI_RREADY                (m03_axi_rready                            ),
 
-    .MASTER_RST                  (1'b0                                      ), // not used write port
-    .WR_START                    (1'b0                                      ),
-    .WR_ADRS                     ({M_lv_rd_burst_addr,3'd0}                 ),
-    .WR_LEN                      ({M_lv_rd_burst_len,3'd0}                  ),
+    .MASTER_RST                  ( 1'b0                                     ), // not used write port
+    .WR_START                    ( 1'b0                                     ),
+    .WR_ADRS                     ( 'd0                                      ),
+    .WR_LEN                      ( 'd0                                      ),
     .WR_READY                    (                                          ),
-    .WR_FIFO_RE                  (M_lv_rd_burst_valid                       ),
-    .WR_FIFO_EMPTY               (1'b0                                      ),
-    .WR_FIFO_AEMPTY              (1'b0                                      ),
-    .WR_FIFO_DATA                (M_lv_rd_burst_data                        ),
-    .WR_DONE                     (M_lv_rd_burst_finish                      ),
+    .WR_FIFO_RE                  (                                          ),
+    .WR_FIFO_EMPTY               ( 1'b0                                     ),
+    .WR_FIFO_AEMPTY              ( 1'b0                                     ),
+    .WR_FIFO_DATA                ( 'd0                                      ),
+    .WR_DONE                     (                                          ),
 
     .RD_START                    (M_lv_rd_burst_req                         ),
     .RD_ADRS                     ({M_lv_rd_burst_addr,3'd0}                 ),
