@@ -6,7 +6,7 @@
     sim-time: 820 us
 */
 
-`include "hyper_para.v"
+`include "../hyper_para.v"
 module AttnCalcBlock_tb ();
 
 reg                                                      s_clk                ;

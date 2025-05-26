@@ -6,7 +6,7 @@
     sim-time: 2600 us + 
 */
 
-`include "hyper_para.v"
+`include "../hyper_para.v"
 module SpikformerEncoderBlock_tb ();
 
 reg                                                  s_clk                   ;

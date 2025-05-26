@@ -8,7 +8,7 @@
               total_time: 12640 - 3365 = 9275 us
 */
 
-`include "hyper_para.v"
+`include "../hyper_para.v"
 module TOP_transformer_tb ();
 
 reg                                                  s_clk                   ;
