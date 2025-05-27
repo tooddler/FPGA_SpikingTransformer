@@ -6,7 +6,7 @@
     BRAM-USE : 36 K BRAM * 4 * 3 
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module qkv_BRAM_group (
     input                                                       s_clk                ,
     input                                                       s_rst                ,
@@ -101,3 +101,5 @@ qkv_SpikesTmpRam Value_SpikesTmpRam (
 );
 
 endmodule // akv_BRAM_group
+
+

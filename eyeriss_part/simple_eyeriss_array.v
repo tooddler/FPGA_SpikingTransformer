@@ -3,10 +3,10 @@
     Author  : Toddler. 
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
-    todo    : 增加 BRAM 带宽，保证计算效率 (use NoC? 异步处理？)  
+    todo    : 增加 BRAM 带宽，保证计算效�?(use NoC? 异步处理�?  
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module simple_eyeriss_array (
     input                                             s_clk               ,
     input                                             s_rst               ,
@@ -704,3 +704,5 @@ always@(*) begin
 end
 
 endmodule // simple_eyeriss_array
+
+

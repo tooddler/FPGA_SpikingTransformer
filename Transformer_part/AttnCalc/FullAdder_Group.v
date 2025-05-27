@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module FullAdder_Group (
     // Spikes-in
     input       [8 - 1 : 0]          i_Spikesdata         ,
@@ -100,3 +100,5 @@ Full_adder u_Full_adder_m06(
 );
 
 endmodule // FullAdder_Group
+
+

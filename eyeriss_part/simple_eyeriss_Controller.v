@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module simple_eyeriss_Controller (
     input                                            s_clk                     ,
     input                                            s_rst                     ,
@@ -423,3 +423,5 @@ always@(*) begin
 end
 
 endmodule // simple_eyeriss_Controller
+
+

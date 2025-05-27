@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module tb_adder ();
 reg                 s_clk  ;
 reg                 s_rst  ;
@@ -54,3 +54,5 @@ PipelineAdder u_PipelineAdder(
 );
 
 endmodule // tb_adder
+
+

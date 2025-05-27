@@ -5,7 +5,7 @@
     func    : half adder group + Embedded RAM
 */
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module PatchEmbed (
     input                                            s_clk                  ,
     input                                            s_rst                  ,
@@ -106,3 +106,5 @@ EmbeddedRAM EmbeddedRAM_m0 (
 );
 
 endmodule // PatchEmbed
+
+

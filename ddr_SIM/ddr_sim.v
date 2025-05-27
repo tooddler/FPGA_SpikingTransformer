@@ -4,7 +4,7 @@
     author      : <zhiquan huang>
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module ddr_sim (
     input                                     user_clk             ,
     input                                     user_rst             ,
@@ -189,3 +189,5 @@ always @(posedge user_clk, posedge user_rst) begin
 end
 
 endmodule //ddr_sim
+
+

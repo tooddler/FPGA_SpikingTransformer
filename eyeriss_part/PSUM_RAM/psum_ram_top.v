@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module psum_ram_top (
     input                                                     s_clk               ,
     input                                                     s_rst               ,
@@ -134,3 +134,5 @@ psum_ram psum_ram_m02 (
 
 
 endmodule // psum_ram
+
+

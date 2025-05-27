@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module fifo_sim ();
 
 reg               s_clk  ;
@@ -60,3 +60,5 @@ Mtrx_slice_fifo u_Mtrx_slice_fifo(
 
 
 endmodule
+
+

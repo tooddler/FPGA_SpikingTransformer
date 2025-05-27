@@ -6,7 +6,7 @@
     BRAM-USE : 36 K BRAM * 2.5 * 2
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module Tmp_AttnRAM_group (
     input                                                           s_clk                ,
     input                                                           s_rst                ,
@@ -90,3 +90,5 @@ Attn_TmpRam m01_Attn_TmpRam (
 );
 
 endmodule // Tmp_AttnRAM_group
+
+

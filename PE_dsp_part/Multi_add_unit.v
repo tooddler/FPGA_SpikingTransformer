@@ -10,7 +10,7 @@
         ps: 新一次的计算需复位 PE array 中的 Register Files
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module Multi_add_unit (
     input                                        s_clk             ,
     input                                        s_rst             ,
@@ -66,3 +66,5 @@ conv1_multi u_conv1_multi (
 );
 
 endmodule // Multi_add_unit
+
+

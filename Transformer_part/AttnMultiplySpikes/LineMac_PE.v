@@ -5,7 +5,7 @@
     Encoder  : UTF-8
 */
 
-`include "../../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module LineMac_PE (
     input                                                             s_clk                ,
     input                                                             s_rst                , 
@@ -137,3 +137,5 @@ MM_Calc_FIFO u_MM_Calc_FIFO (
 );
 
 endmodule // LineMac_PE
+
+

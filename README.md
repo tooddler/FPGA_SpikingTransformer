@@ -63,9 +63,17 @@
 ## 使用说明
    - 后续更新...
 
-3. 配置说明
+## 配置说明
    - 在`hyper_para.v`中配置相关参数
-   - 根据实际需求修改顶层模块
+      -- 超参数说明，需要修改 src 文件中的 include 为绝对路径 （保证能加入Block Design 中）
+      ```powershell
+         # win version
+         .\setup.ps1 "<real_path_to_project>\hyper_para.v"
+      ```
+      ```bash
+         # linux version
+         ./setup.sh /<real_path_to_project>/hyper_para.v
+      ```
 
 ## 贡献指南
 

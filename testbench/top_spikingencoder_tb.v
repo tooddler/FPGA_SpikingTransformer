@@ -5,7 +5,7 @@
 */
 `timescale 1ns / 1ps
 
-`include "hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module top_spikingencoder_tb ();
 
 reg                                     s_clk                       ;
@@ -627,3 +627,5 @@ always@(posedge s_clk) begin
 end
 
 endmodule // top_spikingencoder_tb
+
+

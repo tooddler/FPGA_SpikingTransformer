@@ -17,3 +17,5 @@ assign o_sum   = i_data0 ^ i_data1;
 assign o_carry = i_data0 & i_data1;
 
 endmodule // half_adder
+
+

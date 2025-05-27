@@ -74,3 +74,5 @@
 `define     QK_SCALE                    8                // q @ k^T / scale 
 // mlp linear layers
 `define     MLP_HIDDEN_WIDTH            1536             // 384 x 4
+
+

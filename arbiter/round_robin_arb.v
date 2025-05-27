@@ -4,7 +4,7 @@
     Encoder : UTF-8
 */
 
-`include "../hyper_para.v"
+`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
 module round_robin_arb (
     input                                  ddr_clk                  ,
     input                                  ddr_rstn                 ,
@@ -377,3 +377,5 @@ assign r03_burst_read_finish  =   (rd_sel_r0[3])  ?  rd_burst_finish  :  1'b0 ;
 
 
 endmodule //ddr_data_read_write
+
+
