@@ -3,7 +3,6 @@
     Author  : Toddler. 
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
-    todo    : 增加 BRAM 带宽，保证计算效�?(use NoC? 异步处理�?  
 */
 
 `include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
