@@ -67,7 +67,7 @@
    - 在`hyper_para.v`中配置相关参数
       -- 超参数说明，需要修改 src 文件中的 include 为绝对路径 （保证能加入Block Design 中）
       ```python
-         python setup.py "hyper_para.v"
+         python setup.py "<real_path>/hyper_para.v"
       ```
    - 在 vivado 工程中运行 init_ips.tcl 生成对应的IP
       ```tcl
