@@ -69,6 +69,10 @@
       ```python
          python setup.py "hyper_para.v"
       ```
+   - 在 vivado 工程中运行 init_ips.tcl 生成对应的IP
+      ```tcl
+         source <real_path>/FPGA_SpikingTransformer/IPs_init/init_ips.tcl
+      ```
 
 ## 贡献指南
 
