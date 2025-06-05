@@ -6,7 +6,7 @@
     sim-time: 820 us
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module AttnCalcBlock_tb ();
 
 reg                                                      s_clk                ;

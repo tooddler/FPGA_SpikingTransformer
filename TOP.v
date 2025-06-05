@@ -5,10 +5,12 @@
     Encoder : UTF-8
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module TOP (
     input                                                       s_clk                ,
     input                                                       s_rst                ,
+
+    input                                                       i_Accelerator_working,
     // ---- ConvWeightsLoad ---- \\
     output [0:0]                                                m00_axi_awid         ,
     output [31:0]                                               m00_axi_awaddr       ,
@@ -299,7 +301,7 @@ aq_axi_master u_aq_axi_master_ConvWeightsLoad (
     .WR_FIFO_DATA                ( 'd0                                      ),
     .WR_DONE                     (                                          ),
 
-    .RD_START                    (burst_read_req                            ),
+    .RD_START                    (burst_read_req && i_Accelerator_working   ),
     .RD_ADRS                     ({burst_read_addr,3'd0}                    ),
     .RD_LEN                      ({burst_read_len,3'd0}                     ),
     .RD_READY                    (                                          ),
@@ -369,7 +371,7 @@ aq_axi_master u_aq_axi_master_WeightsQuery (
     .WR_FIFO_DATA                ( 'd0                                      ),
     .WR_DONE                     (                                          ),
 
-    .RD_START                    (M_lq_rd_burst_req                         ),
+    .RD_START                    (M_lq_rd_burst_req && i_Accelerator_working),
     .RD_ADRS                     ({M_lq_rd_burst_addr,3'd0}                 ),
     .RD_LEN                      ({M_lq_rd_burst_len,3'd0}                  ),
     .RD_READY                    (                                          ),
@@ -439,7 +441,7 @@ aq_axi_master u_aq_axi_master_WeightsKey (
     .WR_FIFO_DATA                ( 'd0                                      ),
     .WR_DONE                     (                                          ),
 
-    .RD_START                    (M_lk_rd_burst_req                         ),
+    .RD_START                    (M_lk_rd_burst_req && i_Accelerator_working),
     .RD_ADRS                     ({M_lk_rd_burst_addr,3'd0}                 ),
     .RD_LEN                      ({M_lk_rd_burst_len,3'd0}                  ),
     .RD_READY                    (                                          ),
@@ -509,7 +511,7 @@ aq_axi_master u_aq_axi_master_WeightsValue (
     .WR_FIFO_DATA                ( 'd0                                      ),
     .WR_DONE                     (                                          ),
 
-    .RD_START                    (M_lv_rd_burst_req                         ),
+    .RD_START                    (M_lv_rd_burst_req && i_Accelerator_working),
     .RD_ADRS                     ({M_lv_rd_burst_addr,3'd0}                 ),
     .RD_LEN                      ({M_lv_rd_burst_len,3'd0}                  ),
     .RD_READY                    (                                          ),

@@ -8,7 +8,7 @@
     New in v1 : Change Weights storage Shape so that facilitate AXI brust read
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module weight_fifo_v1 #(
     parameter WEIGHTS_BASEADDR = `WEIGHTS_Q_BASEADDR
 )(

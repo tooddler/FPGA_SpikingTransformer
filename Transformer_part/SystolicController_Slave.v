@@ -5,7 +5,7 @@
     Encoder : UTF-8
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module SystolicController_Slave #(
     // CALC_LINEAR_K == 0 Calc K Mtrx else Calc V Mtrx
     parameter CALC_LINEAR_K             =             0

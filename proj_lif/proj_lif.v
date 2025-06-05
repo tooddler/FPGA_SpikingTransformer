@@ -9,7 +9,7 @@
             V_{reset}  =  0
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module proj_lif #(
     parameter  ADD9_ALL_BITS = `ADD9_ALL_BITS   
 )(

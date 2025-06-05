@@ -4,11 +4,9 @@
     Email   : 23011211185@stu.xidian.edu.cn
     Encoder : UTF-8
     func    : A * B         fetch data / calculate / load data
-    
-    //TODO 优化 A 矩阵的输�?FIFO 大小、Psum FIFO 改为 LUTRAM
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module SystolicArray (
     input                                             s_clk               ,
     input                                             s_rst               ,   

@@ -5,7 +5,7 @@
     func    : half adder group + Embedded RAM
 */
 
-`include "E:/Desktop/spiking_transformer/spiking_transformer/spiking_transformer.srcs/sources_1/imports/FPGA_SpikingTransformer/hyper_para.v"
+`include "E:/Desktop/Zynq_Spikformer/Zynq_Spikformer.srcs/sources_1/hyper_para.v"
 module PatchEmbed (
     input                                            s_clk                  ,
     input                                            s_rst                  ,
@@ -73,7 +73,7 @@ end
 // o_ramout_ready
 always@(posedge s_clk, posedge s_rst) begin
     if (s_rst)
-        o_ramout_ready <= 1'b1;  // XXX : JUST FOR SIMULATION
+        o_ramout_ready <= 1'b0;  // XXX : FOR SIMULATION
     else if (r_trsfrmrdata_valid && ~i_data_valid)
         o_ramout_ready <= 1'b1;
 end
