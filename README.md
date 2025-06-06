@@ -22,7 +22,7 @@
 
 4. **TPU设计参考**
    - 使用脉动矩阵实现脉冲线性层
-   - 优化MLP计算性能
+   - 优化 MLP 计算性能
 
 ## 项目结构
 
@@ -53,13 +53,19 @@
 ## 架构图
 
 ### SpikingEncoder架构
-![SpikingEncoder00](/diagram/SpikingEncoder.png)
+<div align="center">
+<img src="/diagram/SpikingEncoder.png" width="100%">
+</div>
 
 ### Eyeriss架构
-![Eyeriss00](/diagram/Eyeriss_part.png)
+<div align="center">
+<img src="/diagram/Eyeriss_part.png" width="100%">
+</div>
 
 ### Spiking Attention架构
-![Attention00](/diagram/SpikingAttn.png)
+<div align="center">
+<img src="/diagram/SpikingAttn.png" width="100%">
+</div>
 
 ## 开发进度
 
@@ -70,13 +76,21 @@
 
 ## 使用说明
    - 初步仿真：
+
       1. 设置 TOP_tb.v 为 top 文件，并配置好 IP；
+
       2. 这里的 DDR 仿真模型选择的是 ddr_sim_top.v , 使用了
+
          weight_bin_new.bin  : 脉冲编码层卷积以及各脉冲卷积层的卷积核权重
+
          img_bin.bin         ：仿真使用的 rgb888 测试数据
+
          linear_q_weight.bin ：linear_q的权重矩阵以及后续ffn, mlp部分权重
+
          linear_k_weight.bin ：linear_k的权重矩阵以及后续ffn, mlp部分权重
+
          linear_v_weight.bin ：linear_v的权重矩阵以及后续ffn, mlp部分权重
+
       3. run 后会生成每一层的输出结果(.txt files)
       4. 在 python 中与 torch 计算结果对比测试
          ```
@@ -93,7 +107,9 @@
          ```
          打印显示示例：
 
-         ![test](/diagram/python_run.png)
+<div align="center">
+<img src="/diagram/python_run.png" width="40%">
+</div>
 
       5. 初步速度测试：
          这里很玄学了 待我实习回去再说 ...
@@ -104,23 +120,30 @@
          ![gpu_result](/diagram/rtx4090_result.png)
 
          仿真用时约为 **120 ms** (主频 100MHZ) 只包含了部分 DDR Load 到 register-files 的时间以及计算时间，还有后续从 FPGA 读回的时间还没算且不包含 CPU -> ddr 的时间。
+
       6. 预综合加布局布线：
+
          在 xczu7ev-ffvc1156-2-i 上实现，实际主频 **200 MHZ**
+
          ps 端代码 目前在外地也没板子，后续再说 ...
 
-         ![utilization_and_timing](/diagram/utilization_and_timing.png)
+<div align="center">
+<img src="/diagram/utilization_and_timing.png" width="50%">
+</div>
 
    - 后续详细完善... 
 
 ## 配置说明
    - 在`hyper_para.v`中配置相关参数
+
       -- 超参数说明，需要修改 src 文件中的 include 为绝对路径 （保证能加入Block Design 中）
       ```python
          python setup.py "<real_path>/hyper_para.v"
       ```
+
    - 在 vivado 工程中运行 init_ips.tcl 生成对应的IP
       ```tcl
          source <real_path>/FPGA_SpikingTransformer/IPs_init/init_ips.tcl
       ```
 
-## 欢迎指导、交流 😊
+### 欢迎指导、交流 😊
