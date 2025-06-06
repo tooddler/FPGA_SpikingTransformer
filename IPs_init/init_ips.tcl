@@ -726,7 +726,7 @@ set_property -dict [list \
     CONFIG.ce_overrides {ce_overrides_sync_controls} \
     CONFIG.qualify_we_with_i_ce {false} \
     CONFIG.Pipeline_Stages {0} \
-    CONFIG.coefficient_file {$script_dir/coe_files/fetch_code.coe} \
+    CONFIG.coefficient_file "[file join $script_dir coe_files fetch_code.coe]" \
 ] [get_ips cal_code_rom]
 generate_target all [get_ips cal_code_rom]
 puts "ROM IP核 cal_code_rom 已成功生成"
