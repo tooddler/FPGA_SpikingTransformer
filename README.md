@@ -112,14 +112,15 @@
          </div>
 
       5. 初步速度测试：
+
          这里很玄学了 待我实习回去再说 ...
 
          ```python
-            python model.py  # 包含了一个 gpu 跑这个 TIMESTEP = 4 的网络用时
+            python model.py  # 包含了一个 rtx4060 跑这个 TIMESTEP = 4 的网络用时
          ```
 
          <div align="center">
-         <img src="/diagram/rtx4090_result.png" width="40%">
+         <img src="/diagram/rtx4060_result.png" width="40%">
          </div>
 
          仿真用时约为 **120 ms** (主频 100MHZ) 只包含了部分 DDR Load 到 register-files 的时间以及计算时间，还有后续从 FPGA 读回的时间还没算且不包含 CPU -> ddr 的时间。
