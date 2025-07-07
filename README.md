@@ -53,16 +53,19 @@
 ## 架构图
 
 ### SpikingEncoder架构
+
 <div align="center">
 <img src="/diagram/SpikingEncoder.png" width="100%">
 </div>
 
 ### Eyeriss架构
+
 <div align="center">
 <img src="/diagram/Eyeriss_part.png" width="100%">
 </div>
 
 ### Spiking Attention架构
+
 <div align="center">
 <img src="/diagram/SpikingAttn.png" width="100%">
 </div>
@@ -75,6 +78,7 @@
 - [ ] 文档完善
 
 ## 使用说明
+
    - 初步仿真：
 
       1. 设置 TOP_tb.v 为 top 文件，并配置好 IP；
@@ -93,18 +97,20 @@
 
       3. run 后会生成每一层的输出结果(.txt files)
       4. 在 python 中与 torch 计算结果对比测试
-         ```
-         Requirements：
+
+         ```Requirements：
             timm==0.5.4
             cupy==10.3.1
             pytorch==1.10.0+cu111
             spikingjelly==0.0.0.0.12
             pyyaml
          ```
+
          ```python
             python model_view.py                   # 卷积部分 （写得很乱...）
             python SpikformerEncoderBlock_view.py  # Transformer 部分
          ```
+
          打印显示示例：
 
          <div align="center">
@@ -119,8 +125,16 @@
             python model.py  # 包含了一个 rtx4060 跑这个 TIMESTEP = 4 的网络用时
          ```
 
+         rtx4060:
+
          <div align="center">
          <img src="/diagram/rtx4060_result.png" width="40%">
+         </div>
+
+         Intel i9:
+
+         <div align="center">
+         <img src="/diagram/intel_i9_result.png" width="40%">
          </div>
 
          仿真用时约为 **120 ms** (主频 100MHZ) 只包含了部分 DDR Load 到 register-files 的时间以及计算时间，还有后续从 FPGA 读回的时间还没算且不包含 CPU -> ddr 的时间。
